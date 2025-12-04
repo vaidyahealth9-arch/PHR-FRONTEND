@@ -1,41 +1,29 @@
 import { Link } from 'react-router-dom';
-import { Users, ChevronDown, FileText, Pill, Image, Calendar, TrendingUp, FolderOpen } from 'lucide-react';
+import { User, ChevronRight, FileText, Pill, Image, Calendar, TrendingUp, FolderOpen } from 'lucide-react';
 import { useState, useEffect } from 'react';
-
-// Simple JWT decoder
-function decodeJWT(token: string) {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    return JSON.parse(jsonPayload);
-  } catch (e) {
-    return null;
-  }
-}
+import { authApi } from '../api/client';
 
 export default function Records() {
-  const [userName, setUserName] = useState<string>('User');
+  const [userName, setUserName] = useState<string>('Loading...');
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      const decoded = decodeJWT(token);
-      if (decoded?.email) {
-        const name = decoded.email.split('@')[0]
-          .split('.')
-          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ');
-        setUserName(name);
-      } else if (decoded?.phone) {
-        setUserName(`User ${decoded.phone.slice(-4)}`);
+    const fetchUserProfile = async () => {
+      try {
+        const response = await authApi.me();
+        const profile = response.data;
+        if (profile.full_name) {
+          setUserName(profile.full_name);
+        } else if (profile.first_name) {
+          setUserName(`${profile.first_name}${profile.last_name ? ' ' + profile.last_name : ''}`);
+        } else {
+          setUserName('My Profile');
+        }
+      } catch (err) {
+        console.error('Failed to fetch user profile:', err);
+        setUserName('My Profile');
       }
-    }
+    };
+    fetchUserProfile();
   }, []);
 
   const recordCategories = [
@@ -74,15 +62,15 @@ export default function Records() {
   return (
     <div className="max-w-md mx-auto px-4 py-4 pb-20">
       {/* Enhanced User Profile Header */}
-      <div className="bg-gradient-to-br from-cyan-600 via-cyan-700 to-cyan-800 rounded-2xl shadow-xl p-6 mb-6 text-white relative overflow-hidden cursor-pointer">
+      <div className="bg-gradient-to-br from-cyan-600 via-cyan-700 to-cyan-800 rounded-2xl shadow-xl p-6 mb-6 text-white relative overflow-hidden">
         {/* Background Patterns */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-8 -mt-8"></div>
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-6 -mb-6"></div>
         
-        <div className="relative flex items-center justify-between">
+        <div className="relative flex items-center">
           <div className="flex items-center gap-3">
             <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-lg">
-              <Users className="text-cyan-700" size={28} />
+              <User className="text-cyan-700" size={28} />
             </div>
             <div>
               <h2 className="text-lg font-bold">
@@ -92,9 +80,6 @@ export default function Records() {
                 My Health Records
               </p>
             </div>
-          </div>
-          <div className="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-            <ChevronDown size={20} />
           </div>
         </div>
       </div>
@@ -152,7 +137,7 @@ export default function Records() {
 
               {/* Arrow */}
               <div className="flex items-center pr-4">
-                <ChevronDown className="w-5 h-5 text-gray-400 transform -rotate-90" />
+                <ChevronRight className="w-5 h-5 text-gray-400" />
               </div>
             </Link>
           );

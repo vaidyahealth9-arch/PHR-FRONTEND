@@ -90,6 +90,10 @@ export const profilesApi = {
 };
 
 export const recordsApi = {
+  // List medical records with optional filters
+  list: (params?: { search?: string; status?: string; from_date?: string; to_date?: string }) =>
+    apiClient.get('/api/v1/records', { params }),
+  
   upload: (formData: FormData) =>
     apiClient.post('/api/v1/records/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -101,6 +105,10 @@ export const recordsApi = {
     }),
   
   get: (id: string) => apiClient.get(`/api/v1/records/${id}`),
+  
+  getDetails: (id: number) => apiClient.get(`/api/v1/records/${id}`),
+  
+  download: (id: number) => apiClient.get(`/api/v1/records/${id}/download`, { responseType: 'blob' }),
   
   update: (id: string, data: any) => apiClient.put(`/api/v1/records/${id}`, data),
   

@@ -211,7 +211,7 @@ export default function Login() {
               {/* Footer */}
               <div className="mt-5 pt-5 border-t border-gray-100">
                 <p className="text-center text-xs text-gray-500">
-                  🔒 Secure • ABDM/ABHA Compliant • End-to-End Encrypted
+                  🔒 Secure • End-to-End Encrypted
                 </p>
               </div>
             </div>

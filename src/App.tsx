@@ -34,6 +34,7 @@ function App() {
         <Route path="records/reports" element={<MyReports />} />
         <Route path="records/prescriptions" element={<MyPrescriptions />} />
         <Route path="records/radiology" element={<RadiologyImages />} />
+        <Route path="records/view/:id" element={<RecordView />} />
         <Route path="records/:id" element={<RecordView />} />
         <Route path="upload" element={<UploadRecord />} />
         <Route path="medications" element={<Medications />} />
