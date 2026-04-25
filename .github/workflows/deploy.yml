@@ -38,6 +38,6 @@ jobs:
           service: ${{ env.SERVICE }}
           region: ${{ env.REGION }}
           image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO }}/${{ env.SERVICE }}:${{ github.sha }}
-          flags: '--allow-unauthenticated --port=80'
+          flags: '--allow-unauthenticated --port=8080'
           env_vars: |-
             PHR_API_UPSTREAM=https://dev-api.phr.vaidyahealth.com/

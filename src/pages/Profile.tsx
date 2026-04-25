@@ -1,8 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useMemo, useState } from 'react';
+import { 
+  User, 
+  Users, 
+  Plus, 
+  Edit2, 
+  X, 
+  Loader2, 
+  Check,
+  Phone,
+  Mail,
+  MapPin,
+  ShieldCheck,
+  Activity,
+  AlertCircle
+} from 'lucide-react';
+import { useCreateProfile, useProfiles, useRecords } from '../hooks/useApi';
 import { authApi } from '../api/client';
-import { ChevronRight, User, Users, FileText, Settings, Bell, Lock, HelpCircle, LogOut, X, Edit2, Camera, Share2, Download, Star, Award, Activity, Heart } from 'lucide-react';
+import { useActiveProfile } from '../context/ProfileContext';
 
 interface UserProfile {
   id: number;
@@ -19,667 +34,527 @@ interface UserProfile {
   state: string | null;
   postal_code: string | null;
   country: string | null;
-  abha_address: string | null;
-  abha_id: string | null;
   full_name: string;
   age: number | null;
 }
 
-interface FamilyProfile {
-  id: string;
-  name: string;
-  relation: string;
-  avatar: string;
-  age: number;
-  bloodGroup: string;
-}
-
 export default function Profile() {
-  const navigate = useNavigate();
-  const { logout } = useAuth();
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const [showAddFamilyModal, setShowAddFamilyModal] = useState(false);
-  const [selectedFamily, setSelectedFamily] = useState<FamilyProfile | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'medical' | 'vitals'>('overview');
+  const { profiles, activeProfileId, setActiveProfileId } = useActiveProfile();
+  const { isLoading: profilesLoading, refetch: refetchProfiles } = useProfiles();
+  const createProfile = useCreateProfile();
+
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [savingUser, setSavingUser] = useState(false);
+  const [showEditUser, setShowEditUser] = useState(false);
+  const [showAddFamily, setShowAddFamily] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const response = await authApi.me();
-        setUserProfile(response.data);
-      } catch (error) {
-        console.error('Failed to fetch user profile:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUserProfile();
-  }, []);
+  const [editForm, setEditForm] = useState({
+    first_name: '',
+    last_name: '',
+    middle_name: '',
+    gender: '',
+    date_of_birth: '',
+    contact_email: '',
+    address_line1: '',
+    address_line2: '',
+    city: '',
+    state: '',
+    postal_code: '',
+    country: '',
+  });
 
-  // Format date of birth for display
-  const formatDateOfBirth = (dateStr: string | null) => {
-    if (!dateStr) return 'Not set';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-  };
+  const [newFamilyMember, setNewFamilyMember] = useState({
+    full_name: '',
+    relationship: 'other',
+    date_of_birth: '',
+    blood_group: '',
+    gender: '',
+  });
 
-  // Get gender display text
-  const getGenderDisplay = (gender: string | null) => {
-    if (!gender) return '';
-    const genderMap: { [key: string]: string } = {
-      'M': 'Male',
-      'F': 'Female',
-      'male': 'Male',
-      'female': 'Female',
-      'Male': 'Male',
-      'Female': 'Female',
-    };
-    return genderMap[gender] || gender;
-  };
-
-  // Build profile summary string (e.g., "32 years • Male")
-  const getProfileSummary = () => {
-    const parts = [];
-    if (userProfile?.age) parts.push(`${userProfile.age} years`);
-    if (userProfile?.gender) parts.push(getGenderDisplay(userProfile.gender));
-    return parts.join(' • ') || 'Complete your profile';
-  };
-
-  const familyProfiles: FamilyProfile[] = [
-    { id: '2', name: 'Anjali Sharma', relation: 'Mother', avatar: '👩', age: 58, bloodGroup: 'A+' },
-    { id: '3', name: 'Priya Sharma', relation: 'Daughter', avatar: '👧', age: 8, bloodGroup: 'O+' },
-    { id: '4', name: 'Rajesh Sharma', relation: 'Father', avatar: '👨', age: 62, bloodGroup: 'B+' },
-  ];
-
-  const healthStats = [
-    { icon: Activity, label: 'Health Score', value: '85/100', color: 'text-green-600', bgColor: 'bg-green-50' },
-    { icon: Heart, label: 'Last Checkup', value: '2 weeks ago', color: 'text-red-600', bgColor: 'bg-red-50' },
-    { icon: Award, label: 'Records', value: '24 items', color: 'text-purple-600', bgColor: 'bg-purple-50' },
-    { icon: Star, label: 'Streak', value: '15 days', color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
-  ];
-
-  const MenuItem = ({ icon: Icon, label, onClick, color = 'text-gray-700', badge }: any) => (
-    <button
-      onClick={onClick}
-      className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
-    >
-      <div className="flex items-center gap-3">
-        <Icon className={`w-5 h-5 ${color}`} />
-        <span className="font-medium text-gray-800">{label}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        {badge && <span className="px-2 py-1 bg-red-500 text-white text-xs rounded-full">{badge}</span>}
-        <ChevronRight className="w-5 h-5 text-gray-400" />
-      </div>
-    </button>
+  const realtimePollMs = Number(import.meta.env.VITE_REALTIME_POLL_MS || '20000');
+  const recordsQuery = useRecords(
+    activeProfileId || '',
+    {
+      page: 1,
+      page_size: 1,
+      sort_by: 'date',
+      sort_order: 'desc',
+    },
+    {
+      refetchIntervalMs: realtimePollMs,
+    }
   );
 
-  const handleFamilyClick = (profile: FamilyProfile) => {
-    setSelectedFamily(profile);
+  const familyProfiles = useMemo(
+    () => profiles.filter((p) => !p.is_primary),
+    [profiles]
+  );
+
+  const loadUserProfile = async () => {
+    setLoadingUser(true);
+    setError(null);
+    try {
+      const response = await authApi.me();
+      const data = response.data as UserProfile;
+      setUserProfile(data);
+      setEditForm({
+        first_name: data.first_name || '',
+        last_name: data.last_name || '',
+        middle_name: data.middle_name || '',
+        gender: data.gender || '',
+        date_of_birth: data.date_of_birth || '',
+        contact_email: data.contact_email || '',
+        address_line1: data.address_line1 || '',
+        address_line2: data.address_line2 || '',
+        city: data.city || '',
+        state: data.state || '',
+        postal_code: data.postal_code || '',
+        country: data.country || '',
+      });
+    } catch {
+      setError('Failed to load user profile. Please refresh.');
+    } finally {
+      setLoadingUser(false);
+    }
   };
 
+  useEffect(() => {
+    loadUserProfile();
+  }, []);
+
+  const handleSaveUser = async () => {
+    setSavingUser(true);
+    setError(null);
+    try {
+      await authApi.updateMe({
+        first_name: editForm.first_name || null,
+        last_name: editForm.last_name || null,
+        middle_name: editForm.middle_name || null,
+        gender: editForm.gender || null,
+        date_of_birth: editForm.date_of_birth || null,
+        contact_email: editForm.contact_email || null,
+        address_line1: editForm.address_line1 || null,
+        address_line2: editForm.address_line2 || null,
+        city: editForm.city || null,
+        state: editForm.state || null,
+        postal_code: editForm.postal_code || null,
+        country: editForm.country || null,
+      });
+      await loadUserProfile();
+      await refetchProfiles();
+      setShowEditUser(false);
+    } catch {
+      setError('Failed to update profile. Please try again.');
+    } finally {
+      setSavingUser(false);
+    }
+  };
+
+  const handleAddFamilyMember = async () => {
+    if (!newFamilyMember.full_name.trim()) {
+      setError('Please enter family member full name.');
+      return;
+    }
+
+    setError(null);
+    try {
+      const created: any = await createProfile.mutateAsync({
+        full_name: newFamilyMember.full_name,
+        relationship: newFamilyMember.relationship,
+        date_of_birth: newFamilyMember.date_of_birth || undefined,
+        blood_group: newFamilyMember.blood_group || undefined,
+        gender: newFamilyMember.gender || undefined,
+      });
+
+      const createdId = created?.data?.id;
+      if (createdId) {
+        setActiveProfileId(String(createdId));
+      }
+
+      setShowAddFamily(false);
+      setNewFamilyMember({
+        full_name: '',
+        relationship: 'other',
+        date_of_birth: '',
+        blood_group: '',
+        gender: '',
+      });
+    } catch {
+      setError('Failed to add family member.');
+    }
+  };
+
+  if (loadingUser || profilesLoading) {
+    return (
+      <div className="flex h-full items-center justify-center p-4">
+        <Loader2 className="w-8 h-8 text-primary-700 animate-spin" />
+      </div>
+    );
+  }
+
+  const recordsTotal = recordsQuery.data?.total ?? 0;
+  const latestRecord = recordsQuery.data?.items?.[0];
+
   return (
-    <div className="max-w-md mx-auto px-4 py-4 pb-20">
-      {/* Current User Profile with Enhanced Design */}
-      <div className="mb-6 relative">
-        <div className="bg-gradient-to-br from-cyan-500 via-cyan-600 to-cyan-700 rounded-2xl p-6 text-white shadow-xl">
-          {/* Background Pattern */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-8 -mt-8"></div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-6 -mb-6"></div>
-          
-          <div className="relative">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg">
-                    <User className="w-12 h-12 text-cyan-600" />
-                  </div>
-                  <button className="absolute bottom-0 right-0 w-7 h-7 bg-cyan-900 rounded-full flex items-center justify-center shadow-lg hover:bg-cyan-800 transition-colors">
-                    <Camera className="w-4 h-4 text-white" />
-                  </button>
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold">{userProfile?.full_name || 'Loading...'}</h2>
-                  <p className="text-cyan-100 text-sm">{getProfileSummary()}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium">
-                      Primary Account
-                    </span>
-                  </div>
-                </div>
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="max-w-md mx-auto px-6 py-6 pb-24 space-y-8"
+    >
+      {/* Error Alert */}
+      <AnimatePresence>
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="flex items-center gap-3 p-4 bg-rose-50 rounded-2xl border border-rose-100 text-rose-600 text-xs font-bold"
+          >
+            <AlertCircle size={16} />
+            {error}
+            <button onClick={() => setError(null)} className="ml-auto opacity-50 hover:opacity-100">
+              <X size={14} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Page Context */}
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-primary-700 rounded-xl flex items-center justify-center shadow-medium text-white">
+            <ShieldCheck size={20} strokeWidth={2.5} />
+          </div>
+          <div>
+            <h2 className="text-sm font-black text-slate-900 tracking-tight uppercase">Health Identity</h2>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5">Verified Account</p>
+          </div>
+        </div>
+        <button
+          onClick={() => setShowEditUser(true)}
+          className="w-10 h-10 bg-white rounded-xl shadow-soft border border-slate-100 flex items-center justify-center text-slate-600 active:scale-95 transition-all"
+        >
+          <Edit2 size={18} strokeWidth={2.5} />
+        </button>
+      </div>
+
+      {/* Universal Header Card */}
+      <div className="bg-gradient-to-br from-primary-700 via-primary-600 to-success-600 rounded-[2.5rem] shadow-premium p-8 text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16" />
+        <div className="relative space-y-6">
+          <div className="flex items-center gap-5">
+            <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-[1.25rem] flex items-center justify-center shadow-lg border border-white/30 text-white flex-shrink-0">
+              <User size={28} strokeWidth={2.5} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-2xl font-black tracking-tight leading-none uppercase truncate mb-1">
+                {userProfile?.full_name || 'Primary User'}
+              </h3>
+              <div className="flex items-center gap-2 text-primary-100">
+                <Phone size={10} strokeWidth={3} />
+                <span className="text-[10px] font-black uppercase tracking-widest">{userProfile?.contact_phone || 'No Phone Sync'}</span>
               </div>
-              <button 
-                onClick={() => setShowProfileModal(true)}
-                className="p-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-lg transition-colors"
-              >
-                <Edit2 className="w-4 h-4" />
-              </button>
             </div>
+          </div>
 
-            {/* Health Stats Grid */}
-            <div className="grid grid-cols-2 gap-2 mt-4">
-              {healthStats.map((stat, index) => (
-                <div key={index} className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <stat.icon className="w-4 h-4 text-white" />
-                    <span className="text-xs text-cyan-100">{stat.label}</span>
-                  </div>
-                  <p className="text-lg font-bold">{stat.value}</p>
-                </div>
-              ))}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10">
+              <p className="text-[10px] font-black text-primary-100 uppercase tracking-widest mb-1.5 opacity-70">Total Analysis</p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-xl font-black">{recordsTotal}</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-primary-100">Files</span>
+              </div>
             </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-2 mt-4">
-              <button 
-                onClick={() => setShowProfileModal(true)}
-                className="flex-1 bg-white text-cyan-600 hover:bg-cyan-50 py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-              >
-                <FileText className="w-4 h-4" />
-                View Full Profile
-              </button>
-              <button className="p-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-lg transition-colors">
-                <Share2 className="w-5 h-5" />
-              </button>
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10">
+              <p className="text-[10px] font-black text-primary-100 uppercase tracking-widest mb-1.5 opacity-70">Latest ID</p>
+              <p className="text-[10px] font-black truncate">{latestRecord?.display_id || '---'}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Family Profiles */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <Users className="w-5 h-5 text-cyan-600" />
-            Family Profiles
-          </h2>
-          <span className="text-sm text-gray-500">{familyProfiles.length} members</span>
+      {/* Member Management */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between px-1">
+          <h3 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-3">
+            <Users className="text-primary-700" size={20} />
+            Family Network
+          </h3>
+          <span className="px-3 py-1 bg-primary-50 text-primary-700 text-[10px] font-black uppercase tracking-widest rounded-lg">
+            {familyProfiles.length + 1} Profiles
+          </span>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-          {familyProfiles.map((profile, index) => (
-            <button
-              key={profile.id}
-              onClick={() => handleFamilyClick(profile)}
-              className={`w-full flex items-center justify-between p-4 hover:bg-gradient-to-r hover:from-cyan-50 hover:to-transparent transition-all ${
-                index !== familyProfiles.length - 1 ? 'border-b border-gray-100' : ''
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center text-3xl shadow-sm">
-                  {profile.avatar}
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-gray-900">{profile.name}</div>
-                  <div className="text-sm text-gray-500">{profile.relation} • {profile.age} years • {profile.bloodGroup}</div>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-gray-400" />
-            </button>
-          ))}
-          
-          {/* Add Profile Button */}
-          <button 
-            onClick={() => setShowAddFamilyModal(true)}
-            className="w-full flex items-center justify-center gap-2 p-4 text-cyan-600 hover:bg-cyan-50 transition-colors font-semibold border-t-2 border-dashed border-gray-200"
-          >
-            <div className="w-10 h-10 bg-cyan-100 rounded-full flex items-center justify-center">
-              <span className="text-2xl text-cyan-600">+</span>
-            </div>
-            <span>Add Family Member</span>
-          </button>
-        </div>
-      </div>
 
-      {/* Shared Records Section */}
-      <div className="mb-6">
-        <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
-          <FileText className="w-5 h-5 text-cyan-600" />
-          Quick Access
-        </h2>
-        <div className="grid grid-cols-2 gap-3">
-          <button 
-            onClick={() => navigate('/records/radiology')}
-            className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl p-4 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
-          >
-            <div className="mb-2">
-              <FileText className="w-8 h-8" />
-            </div>
-            <h3 className="font-semibold text-sm mb-1">Radiology</h3>
-            <p className="text-xs text-purple-100">View images</p>
-          </button>
-          <button 
-            onClick={() => navigate('/records/reports')}
-            className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl p-4 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
-          >
-            <div className="mb-2">
-              <FileText className="w-8 h-8" />
-            </div>
-            <h3 className="font-semibold text-sm mb-1">Reports</h3>
-            <p className="text-xs text-blue-100">Lab results</p>
-          </button>
-          <button 
-            onClick={() => navigate('/records/prescriptions')}
-            className="bg-gradient-to-br from-green-500 to-green-700 rounded-xl p-4 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
-          >
-            <div className="mb-2">
-              <FileText className="w-8 h-8" />
-            </div>
-            <h3 className="font-semibold text-sm mb-1">Prescriptions</h3>
-            <p className="text-xs text-green-100">Medicine list</p>
-          </button>
-          <button 
-            onClick={() => navigate('/trackers')}
-            className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-xl p-4 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
-          >
-            <div className="mb-2">
-              <Activity className="w-8 h-8" />
-            </div>
-            <h3 className="font-semibold text-sm mb-1">Trackers</h3>
-            <p className="text-xs text-orange-100">Health data</p>
-          </button>
-        </div>
-      </div>
-
-      {/* Settings & Options */}
-      <div className="mb-6">
-        <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
-          <Settings className="w-5 h-5 text-cyan-600" />
-          Settings & Preferences
-        </h2>
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-          <MenuItem icon={Bell} label="Notifications" badge="3" onClick={() => alert('Notifications settings')} />
-          <MenuItem icon={Lock} label="Privacy & Security" onClick={() => alert('Privacy settings')} />
-          <MenuItem icon={User} label="Account Settings" onClick={() => alert('Account settings')} />
-          <MenuItem icon={Download} label="Download My Data" color="text-blue-600" onClick={() => alert('Preparing download...')} />
-          <MenuItem icon={HelpCircle} label="Help & Support" onClick={() => alert('Help center')} />
-        </div>
-      </div>
-
-      {/* Data & Privacy Info */}
-      <div className="mb-6 bg-cyan-50 rounded-lg p-4 border border-cyan-100">
-        <h3 className="font-semibold text-sm mb-2 text-cyan-900 flex items-center gap-2">
-          <Lock className="w-4 h-4" />
-          Data & Privacy
-        </h3>
-        <ul className="text-xs text-cyan-800 space-y-1">
-          <li>✓ Avatar, name/age/dob/etc, BMI, blood group</li>
-          <li>✓ Medical history (conditions, allergies, surgeries)</li>
-          <li>✓ Recently updated vitals</li>
-          <li>✓ All data encrypted at rest and in transit</li>
-          <li>✓ You control who has access to your records</li>
-        </ul>
-      </div>
-
-      {/* Logout Button */}
-      <button
-        onClick={() => {
-          if (window.confirm('Are you sure you want to logout?')) {
-            logout();
-          }
-        }}
-        className="w-full flex items-center justify-center gap-3 p-4 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
-      >
-        <LogOut className="w-5 h-5" />
-        <span>Logout</span>
-      </button>
-
-      {/* Profile Details Modal */}
-      {showProfileModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setShowProfileModal(false)}>
-          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white p-4 flex items-center justify-between rounded-t-2xl">
-              <h2 className="text-lg font-bold">Complete Profile</h2>
-              <button
-                onClick={() => setShowProfileModal(false)}
-                className="p-2 hover:bg-white/20 rounded-full transition-colors"
+        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-soft overflow-hidden">
+          {/* Active Profile Dropdown (Simplified) */}
+          <div className="p-6 border-b border-slate-50 bg-slate-50/30">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2.5 block ml-1">Current Active Link</label>
+            <div className="relative">
+              <select
+                value={activeProfileId || ''}
+                onChange={(e) => setActiveProfileId(e.target.value)}
+                className="w-full bg-white border border-slate-100 rounded-2xl px-5 py-3.5 text-xs font-black text-slate-900 shadow-sm focus:ring-2 focus:ring-primary-500 appearance-none uppercase tracking-wider"
               >
-                <X className="w-5 h-5" />
-              </button>
+                {profiles.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.full_name} {p.is_primary ? '• PRIMARY' : `• ${p.relationship.toUpperCase()}`}
+                  </option>
+                ))}
+              </select>
             </div>
+          </div>
 
-            {/* Modal Content */}
-            <div className="p-6">
-              {/* Profile Avatar */}
-              <div className="flex flex-col items-center mb-6">
-                <div className="relative mb-4">
-                  <div className="w-28 h-28 bg-gradient-to-br from-cyan-500 to-cyan-700 rounded-full flex items-center justify-center shadow-xl">
-                    <User className="w-16 h-16 text-white" />
+          <div className="divide-y divide-slate-50">
+            {familyProfiles.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setActiveProfileId(p.id)}
+                className="w-full flex items-center justify-between p-5 hover:bg-slate-50/50 transition-all active:scale-95 group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+                    activeProfileId === p.id 
+                      ? 'bg-primary-700 text-white shadow-medium' 
+                      : 'bg-slate-100 text-slate-400 group-hover:bg-primary-50 group-hover:text-primary-500'
+                  }`}>
+                    {activeProfileId === p.id ? <Check size={20} strokeWidth={3} /> : <User size={20} strokeWidth={2.5} />}
                   </div>
-                  <button className="absolute bottom-0 right-0 w-10 h-10 bg-cyan-900 rounded-full flex items-center justify-center shadow-lg hover:bg-cyan-800 transition-colors">
-                    <Camera className="w-5 h-5 text-white" />
-                  </button>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-1">{userProfile?.full_name || 'User'}</h3>
-                <p className="text-sm text-gray-500 mb-3">{userProfile?.contact_email || userProfile?.contact_phone || ''}</p>
-                <div className="flex gap-2">
-                  <span className="px-3 py-1 bg-cyan-100 text-cyan-700 rounded-full text-xs font-medium">Primary Account</span>
-                  <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Verified</span>
-                </div>
-              </div>
-
-              {/* Tabs */}
-              <div className="flex gap-2 mb-6 border-b border-gray-200">
-                <button
-                  onClick={() => setActiveTab('overview')}
-                  className={`flex-1 pb-3 font-medium transition-colors ${
-                    activeTab === 'overview'
-                      ? 'text-cyan-600 border-b-2 border-cyan-600'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  Overview
-                </button>
-                <button
-                  onClick={() => setActiveTab('medical')}
-                  className={`flex-1 pb-3 font-medium transition-colors ${
-                    activeTab === 'medical'
-                      ? 'text-cyan-600 border-b-2 border-cyan-600'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  Medical
-                </button>
-                <button
-                  onClick={() => setActiveTab('vitals')}
-                  className={`flex-1 pb-3 font-medium transition-colors ${
-                    activeTab === 'vitals'
-                      ? 'text-cyan-600 border-b-2 border-cyan-600'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  Vitals
-                </button>
-              </div>
-
-              {/* Tab Content */}
-              {activeTab === 'overview' && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <label className="text-xs text-gray-600 font-medium">Age</label>
-                      <p className="text-lg font-bold text-gray-900">{userProfile?.age ? `${userProfile.age} years` : 'Not set'}</p>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <label className="text-xs text-gray-600 font-medium">Date of Birth</label>
-                      <p className="text-lg font-bold text-gray-900">{formatDateOfBirth(userProfile?.date_of_birth || null)}</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <label className="text-xs text-gray-600 font-medium">Gender</label>
-                      <p className="text-lg font-bold text-gray-900">{getGenderDisplay(userProfile?.gender || null) || 'Not set'}</p>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <label className="text-xs text-gray-600 font-medium">Blood Group</label>
-                      <p className="text-lg font-bold text-red-600">Not set</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <label className="text-xs text-gray-600 font-medium">Phone</label>
-                    <p className="text-sm font-semibold text-gray-900">{userProfile?.contact_phone ? `+91 ${userProfile.contact_phone}` : 'Not set'}</p>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <label className="text-xs text-gray-600 font-medium">Email</label>
-                    <p className="text-sm font-semibold text-gray-900">{userProfile?.contact_email || 'Not set'}</p>
-                  </div>
-
-                  {(userProfile?.address_line1 || userProfile?.city || userProfile?.state) && (
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <label className="text-xs text-gray-600 font-medium">Address</label>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {[userProfile?.address_line1, userProfile?.address_line2, userProfile?.city, userProfile?.state, userProfile?.postal_code, userProfile?.country].filter(Boolean).join(', ') || 'Not set'}
-                      </p>
-                    </div>
-                  )}
-
-                  {userProfile?.abha_id && (
-                    <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                      <label className="text-xs text-blue-600 font-medium">ABHA ID</label>
-                      <p className="text-sm font-semibold text-blue-900">{userProfile.abha_id}</p>
-                      {userProfile.abha_address && (
-                        <p className="text-xs text-blue-700 mt-1">Address: {userProfile.abha_address}</p>
+                  <div className="text-left">
+                    <p className={`text-sm font-black uppercase tracking-tight ${activeProfileId === p.id ? 'text-primary-700' : 'text-slate-900'}`}>
+                      {p.full_name}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{p.relationship}</span>
+                      {p.blood_group && (
+                        <>
+                          <div className="w-1 h-1 bg-slate-200 rounded-full" />
+                          <span className="text-[10px] font-black text-primary-500 uppercase tracking-widest">{p.blood_group}</span>
+                        </>
                       )}
                     </div>
-                  )}
-                </div>
-              )}
-
-              {activeTab === 'medical' && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-xs text-gray-600 font-medium mb-2 block">Chronic Conditions</label>
-                    <div className="flex flex-wrap gap-2">
-                      <span className="px-3 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium">Hypertension</span>
-                      <button className="px-3 py-2 border-2 border-dashed border-gray-300 text-gray-500 rounded-lg text-sm hover:border-cyan-500 hover:text-cyan-600">+ Add</button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-xs text-gray-600 font-medium mb-2 block">Allergies</label>
-                    <div className="flex flex-wrap gap-2">
-                      <span className="px-3 py-2 bg-orange-100 text-orange-700 rounded-lg text-sm font-medium">Penicillin</span>
-                      <span className="px-3 py-2 bg-orange-100 text-orange-700 rounded-lg text-sm font-medium">Pollen</span>
-                      <button className="px-3 py-2 border-2 border-dashed border-gray-300 text-gray-500 rounded-lg text-sm hover:border-cyan-500 hover:text-cyan-600">+ Add</button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-xs text-gray-600 font-medium mb-2 block">Medications</label>
-                    <div className="space-y-2">
-                      <div className="bg-blue-50 rounded-lg p-3">
-                        <p className="font-medium text-sm">Amlodipine 5mg</p>
-                        <p className="text-xs text-gray-600">Once daily • For hypertension</p>
-                      </div>
-                      <button className="w-full px-3 py-2 border-2 border-dashed border-gray-300 text-gray-500 rounded-lg text-sm hover:border-cyan-500 hover:text-cyan-600">+ Add Medication</button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-xs text-gray-600 font-medium mb-2 block">Past Surgeries</label>
-                    <p className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">None recorded</p>
                   </div>
                 </div>
-              )}
-
-              {activeTab === 'vitals' && (
-                <div className="space-y-3">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-medium text-blue-900">Blood Pressure</p>
-                      <span className="text-xs text-blue-600">Today, 9:30 AM</span>
-                    </div>
-                    <p className="text-3xl font-bold text-blue-700">120/80</p>
-                    <p className="text-xs text-blue-600 mt-1">mmHg • Normal</p>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-medium text-green-900">Blood Sugar (Fasting)</p>
-                      <span className="text-xs text-green-600">Yesterday</span>
-                    </div>
-                    <p className="text-3xl font-bold text-green-700">95</p>
-                    <p className="text-xs text-green-600 mt-1">mg/dL • Normal</p>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-medium text-purple-900">Heart Rate</p>
-                      <span className="text-xs text-purple-600">2 hours ago</span>
-                    </div>
-                    <p className="text-3xl font-bold text-purple-700">72</p>
-                    <p className="text-xs text-purple-600 mt-1">bpm • Normal</p>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-medium text-orange-900">Temperature</p>
-                      <span className="text-xs text-orange-600">Today, 7:00 AM</span>
-                    </div>
-                    <p className="text-3xl font-bold text-orange-700">98.6°F</p>
-                    <p className="text-xs text-orange-600 mt-1">Normal</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 rounded-b-2xl">
-              <button
-                onClick={() => setShowProfileModal(false)}
-                className="w-full py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 text-white font-semibold rounded-lg transition-all shadow-md"
-              >
-                Close
+                {activeProfileId === p.id && (
+                  <motion.div layoutId="active-pill" className="px-3 py-1 bg-success-50 text-success-700 text-[10px] font-black uppercase tracking-widest rounded-lg">
+                    Active
+                  </motion.div>
+                )}
               </button>
+            ))}
+
+            <button
+              onClick={() => setShowAddFamily(true)}
+              className="w-full flex items-center justify-center gap-3 p-6 text-primary-700 hover:bg-primary-50/50 transition-all font-black text-[11px] uppercase tracking-[0.2em]"
+            >
+              <Plus size={18} strokeWidth={3} />
+              Engage New Member
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Account Information Listing */}
+      <section className="space-y-4">
+        <h3 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-3 px-1">
+          <Activity className="text-primary-700" size={20} />
+          Profile Credentials
+        </h3>
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-soft p-6 space-y-4">
+          <div className="flex items-center gap-4 group">
+            <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-primary-50 group-hover:text-primary-700 transition-colors">
+              <Mail size={18} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Sync Email</p>
+              <p className="text-xs font-bold text-slate-900 truncate">{userProfile?.contact_email || 'Not Configured'}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 group">
+            <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-primary-50 group-hover:text-primary-700 transition-colors">
+              <MapPin size={18} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Primary Residence</p>
+              <p className="text-xs font-bold text-slate-900 truncate">
+                {userProfile?.city ? `${userProfile.city}, ${userProfile.country}` : 'Address Pending'}
+              </p>
             </div>
           </div>
         </div>
-      )}
+      </section>
 
-      {/* Add Family Member Modal */}
-      {showAddFamilyModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setShowAddFamilyModal(false)}>
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-gradient-to-r from-cyan-600 to-cyan-700 text-white p-4 flex items-center justify-between rounded-t-2xl">
-              <h2 className="text-lg font-bold">Add Family Member</h2>
-              <button
-                onClick={() => setShowAddFamilyModal(false)}
-                className="p-2 hover:bg-white/20 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                  <input type="text" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent" placeholder="Enter full name" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Relationship</label>
-                  <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
-                    <option>Select relationship</option>
-                    <option>Father</option>
-                    <option>Mother</option>
-                    <option>Spouse</option>
-                    <option>Son</option>
-                    <option>Daughter</option>
-                    <option>Brother</option>
-                    <option>Sister</option>
-                  </select>
-                </div>
+      {/* Edit User Modal */}
+      <AnimatePresence>
+        {showEditUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-6">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-[2.5rem] bg-white shadow-premium relative"
+            >
+              <div className="sticky top-0 z-10 flex items-center justify-between p-8 bg-white/80 backdrop-blur-md border-b border-slate-50">
+                <h4 className="text-base font-black text-slate-900 uppercase tracking-tight">Identity Matrix</h4>
+                <button 
+                  onClick={() => setShowEditUser(false)}
+                  className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 active:scale-90 transition-all"
+                >
+                  <X size={20} strokeWidth={3} />
+                </button>
+              </div>
+
+              <div className="p-8 space-y-6">
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Age</label>
-                    <input type="number" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent" placeholder="Age" />
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Given Name</label>
+                    <input
+                      value={editForm.first_name}
+                      onChange={(e) => setEditForm((p) => ({ ...p, first_name: e.target.value }))}
+                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3.5 text-xs font-bold focus:ring-2 focus:ring-primary-500 transition-all"
+                    />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Blood Group</label>
-                    <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
-                      <option>Select</option>
-                      <option>A+</option>
-                      <option>A-</option>
-                      <option>B+</option>
-                      <option>B-</option>
-                      <option>O+</option>
-                      <option>O-</option>
-                      <option>AB+</option>
-                      <option>AB-</option>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Family Name</label>
+                    <input
+                      value={editForm.last_name}
+                      onChange={(e) => setEditForm((p) => ({ ...p, last_name: e.target.value }))}
+                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3.5 text-xs font-bold focus:ring-2 focus:ring-primary-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Connection</label>
+                  <input
+                    type="email"
+                    value={editForm.contact_email}
+                    onChange={(e) => setEditForm((p) => ({ ...p, contact_email: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3.5 text-xs font-bold focus:ring-2 focus:ring-primary-500 transition-all"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Birth Date</label>
+                    <input
+                      type="date"
+                      value={editForm.date_of_birth}
+                      onChange={(e) => setEditForm((p) => ({ ...p, date_of_birth: e.target.value }))}
+                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3.5 text-xs font-bold focus:ring-2 focus:ring-primary-500 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Gender</label>
+                    <select
+                      value={editForm.gender}
+                      onChange={(e) => setEditForm((p) => ({ ...p, gender: e.target.value }))}
+                      className="w-full bg-white border border-slate-100 rounded-2xl px-4 py-3.5 text-xs font-bold focus:ring-2 focus:ring-primary-500 transition-all appearance-none"
+                    >
+                      <option value="">Status</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
                     </select>
                   </div>
                 </div>
-              </div>
-              <div className="flex gap-3 mt-6">
+
                 <button
-                  onClick={() => setShowAddFamilyModal(false)}
-                  className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                  onClick={handleSaveUser}
+                  disabled={savingUser}
+                  className="w-full btn btn-primary btn-md rounded-2xl shadow-premium py-4 text-[11px] font-black uppercase tracking-[0.2em] active:scale-95 transition-all mt-4"
                 >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    alert('Family member added successfully!');
-                    setShowAddFamilyModal(false);
-                  }}
-                  className="flex-1 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white font-semibold rounded-lg hover:from-cyan-700 hover:to-cyan-800 transition-all"
-                >
-                  Add Member
+                  {savingUser ? <Loader2 size={18} className="animate-spin" /> : 'Synchronize Identity'}
                 </button>
               </div>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
-      {/* Selected Family Member Modal */}
-      {selectedFamily && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedFamily(null)}>
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-4 flex items-center justify-between rounded-t-2xl">
-              <h2 className="text-lg font-bold">Family Member Profile</h2>
-              <button
-                onClick={() => setSelectedFamily(null)}
-                className="p-2 hover:bg-white/20 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6">
-              <div className="flex flex-col items-center mb-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center text-5xl mb-3 shadow-lg">
-                  {selectedFamily.avatar}
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900">{selectedFamily.name}</h3>
-                <p className="text-sm text-gray-500 mb-3">{selectedFamily.relation}</p>
-                <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">Family Member</span>
-              </div>
-
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <label className="text-xs text-gray-600 font-medium">Age</label>
-                    <p className="text-lg font-bold text-gray-900">{selectedFamily.age} years</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <label className="text-xs text-gray-600 font-medium">Blood Group</label>
-                    <p className="text-lg font-bold text-red-600">{selectedFamily.bloodGroup}</p>
-                  </div>
-                </div>
-
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm font-medium text-blue-900 mb-2">Quick Actions</p>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => navigate('/records/reports')}
-                      className="flex-1 py-2 bg-white border border-blue-300 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors"
-                    >
-                      View Records
-                    </button>
-                    <button 
-                      onClick={() => navigate('/trackers')}
-                      className="flex-1 py-2 bg-white border border-blue-300 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors"
-                    >
-                      Track Health
-                    </button>
-                  </div>
+      {/* Add Family Member Modal */}
+      <AnimatePresence>
+        {showAddFamily && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-6">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-sm rounded-[2.5rem] bg-white shadow-premium relative overflow-hidden"
+            >
+              <div className="p-8 bg-slate-950 text-white relative">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-primary-500/20 rounded-full blur-2xl -mr-12 -mt-12" />
+                <div className="relative flex items-center justify-between">
+                  <h4 className="text-base font-black uppercase tracking-tight">Expand Network</h4>
+                  <button 
+                    onClick={() => setShowAddFamily(false)}
+                    className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-white/50 active:scale-90 transition-all"
+                  >
+                    <X size={16} strokeWidth={3} />
+                  </button>
                 </div>
               </div>
 
-              <button
-                onClick={() => setSelectedFamily(null)}
-                className="w-full py-3 mt-6 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold rounded-lg transition-all"
-              >
-                Close
-              </button>
-            </div>
+              <div className="p-8 space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Legal Name</label>
+                    <input
+                      value={newFamilyMember.full_name}
+                      onChange={(e) => setNewFamilyMember((p) => ({ ...p, full_name: e.target.value }))}
+                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3.5 text-xs font-bold focus:ring-2 focus:ring-primary-500"
+                      placeholder="e.g. Sarah J. Doe"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Relationship</label>
+                    <select
+                      value={newFamilyMember.relationship}
+                      onChange={(e) => setNewFamilyMember((p) => ({ ...p, relationship: e.target.value }))}
+                      className="w-full bg-white border border-slate-100 rounded-2xl px-4 py-3.5 text-xs font-bold focus:ring-2 focus:ring-primary-500 appearance-none"
+                    >
+                      <option value="parent">Parent</option>
+                      <option value="spouse">Spouse</option>
+                      <option value="child">Child</option>
+                      <option value="sibling">Sibling</option>
+                      <option value="other">Other Link</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Blood Archetype</label>
+                      <select
+                        value={newFamilyMember.blood_group}
+                        onChange={(e) => setNewFamilyMember((p) => ({ ...p, blood_group: e.target.value }))}
+                        className="w-full bg-white border border-slate-100 rounded-2xl px-4 py-3.5 text-xs font-bold focus:ring-2 focus:ring-primary-500 appearance-none"
+                      >
+                        <option value="">Group</option>
+                        <option>A+</option><option>A-</option>
+                        <option>B+</option><option>B-</option>
+                        <option>O+</option><option>O-</option>
+                        <option>AB+</option><option>AB-</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Engagement</label>
+                      <button
+                        onClick={handleAddFamilyMember}
+                        disabled={createProfile.isPending}
+                        className="w-full bg-primary-700 h-[46px] rounded-2xl flex items-center justify-center text-white shadow-medium active:scale-95 transition-all"
+                      >
+                        {createProfile.isPending ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} strokeWidth={3} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }

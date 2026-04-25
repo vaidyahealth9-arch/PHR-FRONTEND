@@ -1,7 +1,7 @@
 {
   "name": "Vaidya Health - Personal Health Records",
   "short_name": "Vaidya Health",
-  "description": "Securely manage your health records with ABDM/ABHA compliance",
+  "description": "Securely manage your health records",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

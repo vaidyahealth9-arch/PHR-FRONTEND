@@ -1,46 +1,224 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Lexend:wght@100..900&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 196 47% 97%;
+    --foreground: 210 55% 13%;
+    --primary: 198 72% 38%;
+    --secondary: 192 62% 43%;
     --border: 214.3 31.8% 91.4%;
+    --radius: 1.5rem;
+
+    --font-primary: 'Inter', 'Noto Sans Devanagari', sans-serif;
+    --font-heading: 'Lexend', 'Noto Sans Devanagari', sans-serif;
   }
 
   * {
-    @apply border-border;
+    -webkit-tap-highlight-color: rgba(20, 126, 163, 0.2);
+  }
+
+  ::selection {
+    background-color: theme('colors.primary.200');
+    color: theme('colors.primary.900');
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-      sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    @apply bg-slate-50 text-slate-900 antialiased;
+    font-family: var(--font-primary);
+    background-image:
+      radial-gradient(circle at top right, rgba(20, 126, 163, 0.08), transparent 45%),
+      radial-gradient(circle at bottom left, rgba(39, 167, 197, 0.06), transparent 42%);
+    min-height: 100dvh;
+  }
+
+  html,
+  body,
+  #root {
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    @apply tracking-tight;
   }
 }
 
 @layer components {
   .btn {
-    @apply px-4 py-2 rounded-lg font-medium transition-colors duration-200;
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 min-h-12 px-4 py-3 text-sm sm:text-base active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none;
+    touch-action: manipulation;
   }
 
   .btn-primary {
-    @apply bg-primary-600 text-white hover:bg-primary-700;
+    @apply bg-primary-700 text-white shadow-sm hover:bg-primary-800 focus:ring-primary-600;
   }
 
   .btn-secondary {
-    @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
+    @apply bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 focus:ring-slate-300;
+  }
+
+  .btn-md {
+    @apply min-h-12;
   }
 
   .input {
-    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 shadow-sm transition-all duration-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-500 focus:outline-none;
   }
 
-  .card {
-    @apply bg-white rounded-lg shadow-md p-6;
+  .card-clinical {
+    @apply bg-white rounded-[1.5rem] border border-slate-100 shadow-sm overflow-hidden transition-all duration-300;
+  }
+
+  .card-clinical-interactive {
+    @apply card-clinical hover:border-primary-200 active:scale-[0.98];
+  }
+
+  .text-h1 {
+    @apply text-2xl font-bold text-slate-900 leading-none;
+  }
+
+  .text-label-caps {
+    @apply text-[11px] font-bold text-slate-400 uppercase tracking-widest;
+  }
+
+  .text-meta-caps {
+    @apply text-[11px] font-semibold text-slate-400 uppercase tracking-widest;
+  }
+
+  .btn-base {
+    @apply px-5 py-3 rounded-2xl font-extrabold uppercase tracking-widest text-[10px] transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50;
+  }
+
+  .btn-primary-clinical {
+    @apply btn-base bg-primary-700 text-white shadow-md hover:bg-primary-800 hover:shadow-lg;
+  }
+
+  .btn-secondary-clinical {
+    @apply btn-base bg-white text-slate-600 border border-slate-200 shadow-sm hover:bg-slate-50 hover:border-slate-300;
+  }
+
+  .select-clinical {
+    @apply w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-base text-slate-900 shadow-sm transition-all duration-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-500 focus:outline-none truncate;
+  }
+
+  .glass-panel {
+    @apply bg-white/85 backdrop-blur-xl border border-white/70 shadow-[0_10px_30px_rgba(15,23,42,0.08)];
+  }
+
+  .screen-container {
+    @apply w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto px-3 sm:px-5;
+  }
+
+  .auth-shell {
+    @apply relative w-full max-w-sm sm:max-w-md mx-auto space-y-3 sm:space-y-4;
+  }
+
+  .auth-card {
+    @apply rounded-[1.5rem] sm:rounded-[1.75rem] border border-white/70 bg-white shadow-premium overflow-hidden;
+  }
+
+  .hover-lift {
+    @apply transition-all duration-300 ease-spring hover:-translate-y-1 hover:shadow-medium;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html.dark body,
+body.dark {
+  @apply bg-slate-950 text-slate-100;
+  background-image:
+    radial-gradient(circle at top right, rgba(20, 126, 163, 0.18), transparent 45%),
+    radial-gradient(circle at bottom left, rgba(39, 167, 197, 0.12), transparent 42%);
+}
+
+html.dark .glass-panel,
+body.dark .glass-panel {
+  @apply bg-slate-900/85 border-slate-800;
+}
+
+html.dark .card-clinical,
+body.dark .card-clinical {
+  @apply bg-slate-900 border-slate-800;
+}
+
+@media (max-height: 760px) {
+  .auth-brand-sticky {
+    position: relative !important;
+    top: 0 !important;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────
+   Print styles — triggered by window.print() for PDF export
+──────────────────────────────────────────────────────────── */
+@media print {
+
+  /* Visibility-based printing to target only the report content */
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide everything */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Show ONLY the PDF report content and its children */
+  #trend-report-pdf-content,
+  #trend-report-pdf-content * {
+    visibility: visible !important;
+  }
+
+  /* Reset positioning for the report to flow naturally on A4 */
+  #trend-report-pdf-content {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    display: block !important;
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Force page breaks between sections for clean layout */
+  .pdf-section {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    margin-bottom: 2rem !important;
+  }
+
+  /* Clean up margins for the grid */
+  .grid {
+    gap: 1.5rem !important;
+  }
+
+  /* Ensure charts have height */
+  .recharts-responsive-container {
+    width: 100% !important;
+    height: 160px !important;
   }
 }

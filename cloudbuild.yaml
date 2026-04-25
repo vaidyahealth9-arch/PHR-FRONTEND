@@ -1,0 +1,48 @@
+steps:
+  # Build frontend image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-f'
+      - 'Dockerfile.prod'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_NAME}:$COMMIT_SHA'
+      - '.'
+
+  # Push frontend image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_NAME}:$COMMIT_SHA'
+
+  # Deploy frontend to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_SERVICE_NAME}'
+      - '--image'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_NAME}:$COMMIT_SHA'
+      - '--region'
+      - '${_REGION}'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--service-account'
+      - '${_RUNTIME_SA}'
+      - '--port=80'
+      - '--set-env-vars=PHR_API_UPSTREAM=${_PHR_API_UPSTREAM}'
+
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_NAME}:$COMMIT_SHA'
+
+substitutions:
+  _REGION: 'asia-south1'
+  _AR_REPO: 'hale-phr'
+  _SERVICE_NAME: 'phr-frontend'
+  _RUNTIME_SA: 'phr-frontend-sa@PROJECT_ID.iam.gserviceaccount.com'
+  _PHR_API_UPSTREAM: 'https://phr-backend-REPLACE_ME.a.run.app'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

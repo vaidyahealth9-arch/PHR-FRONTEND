@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { authApi } from '../api/client';
 
 export interface AuthUser {
   id: string;
@@ -28,7 +29,11 @@ export function useAuth() {
     
     // Save to localStorage FIRST
     localStorage.setItem('access_token', accessToken);
-    localStorage.setItem('refresh_token', refreshToken);
+    if (refreshToken) {
+      localStorage.setItem('refresh_token', refreshToken);
+    } else {
+      localStorage.removeItem('refresh_token');
+    }
     console.log('Tokens saved to localStorage');
     
     // Then update state - this should trigger immediately
@@ -39,7 +44,18 @@ export function useAuth() {
     checkAuth();
   };
 
-  const logout = () => {
+  const signup = async (payload: Parameters<typeof authApi.signup>[0]) => {
+    await authApi.signup(payload);
+  };
+
+  const logout = async () => {
+    const refreshToken = localStorage.getItem('refresh_token') || undefined;
+    try {
+      await authApi.logout(refreshToken);
+    } catch {
+      // best-effort logout
+    }
+
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     setIsAuthenticated(false);
@@ -53,5 +69,6 @@ export function useAuth() {
     login,
     logout,
     checkAuth,
+    signup,
   };
 }
