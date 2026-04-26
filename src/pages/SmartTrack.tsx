@@ -13,10 +13,11 @@ interface TestGroup {
 }
 
 export default function SmartTrack() {
-  const { profiles, activeProfileId } = useActiveProfile();
-  const validActiveProfileId = activeProfileId && profiles.some((p) => p.id === activeProfileId) ? activeProfileId : '';
+  const { profiles } = useActiveProfile();
 
-  const { data: historyData, isLoading } = useAnalyteHistory(validActiveProfileId || undefined, !!validActiveProfileId);
+  // analyte history is tied to the logged-in user's mobile number on the backend,
+  // not to a specific profile — so always fetch it without waiting for profile selection.
+  const { data: historyData, isLoading } = useAnalyteHistory(undefined, true);
   const { data: profilesList } = useProfiles();
   const [exporting, setExporting] = useState(false);
 
