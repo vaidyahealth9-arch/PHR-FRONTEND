@@ -91,7 +91,14 @@ export function Signup() {
         postal_code: postalCode || undefined,
         country: "India",
       });
-      navigate("/login");
+      navigate("/otp", {
+        replace: true,
+        state: {
+          phoneNumber: contactPhone,
+          autoSendOtp: true,
+          fromSignup: true,
+        },
+      });
     } catch (err: any) {
       setError(extractErrorMessage(err, "Failed to create an account. Please try again."));
     } finally {

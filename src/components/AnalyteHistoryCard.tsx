@@ -60,6 +60,7 @@ export default function AnalyteHistoryCard({ analyte, forceExpand = false }: { a
 
   const isNormal = analyte.status_color === 'GREEN';
   const isAmber = analyte.status_color === 'AMBER';
+  const statusLabel = isNormal ? 'Normal' : isAmber ? 'Borderline' : 'Out of Range';
 
   const statusBg = isNormal
     ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
@@ -97,31 +98,28 @@ export default function AnalyteHistoryCard({ analyte, forceExpand = false }: { a
           {/* Status Dot */}
           <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${statusDot} shadow-sm`} />
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex-1 min-w-0 space-y-1">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <span className="font-semibold text-sm text-slate-900 truncate">{analyte.name}</span>
-              {!isNormal && (
-                <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${statusBg}`}>
-                  {isAmber ? 'Borderline' : 'Out of Range'}
-                </span>
-              )}
+              <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${statusBg}`}>
+                {statusLabel}
+              </span>
             </div>
 
-            {/* prev → current value display */}
-            <div className="flex items-center gap-2 mt-0.5 text-[11px] font-medium">
-              {prevNum !== null && !isNaN(prevNum) && (
-                <>
-                  <span className="text-slate-400">{prevNum.toFixed(2)}</span>
-                  <span className="text-slate-300">→</span>
-                </>
-              )}
-              <span className="text-slate-700 font-semibold">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-medium">
+              <span className="text-slate-900 font-semibold tabular-nums">
                 {isNaN(currNum) ? analyte.current_value : currNum.toFixed(2)} {analyte.unit}
               </span>
+              {prevNum !== null && !isNaN(prevNum) && (
+                <>
+                  <span className="text-slate-300">•</span>
+                  <span className="text-slate-500">Previous {prevNum.toFixed(2)} {analyte.unit}</span>
+                </>
+              )}
               {delta !== null && deltaPct && (
                 <span className={`flex items-center gap-0.5 ${trendColor}`}>
                   <TrendIcon className="w-3 h-3" />
-                  {deltaPct}%
+                  {delta > 0 ? '+' : ''}{delta.toFixed(2)} ({deltaPct}%)
                 </span>
               )}
             </div>

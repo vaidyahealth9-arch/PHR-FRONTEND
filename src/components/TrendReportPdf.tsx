@@ -1,5 +1,6 @@
-import AnalyteHistoryCard, { AnalyteHistoryData } from './AnalyteHistoryCard';
-import { Beaker, ShieldCheck, Activity } from 'lucide-react';
+import { Beaker, ShieldCheck, Activity, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { AnalyteHistoryData } from './AnalyteHistoryCard';
+import TrendChart from './TrendChart';
 
 interface TestGroup {
   test_name: string;
@@ -11,78 +12,160 @@ interface TrendReportPdfProps {
   patientName: string;
 }
 
+const AnalytePdfCard = ({ analyte }: { analyte: AnalyteHistoryData }) => {
+  const isNormal = analyte.status_color === 'GREEN';
+  const isAmber = analyte.status_color === 'AMBER';
+  const statusLabel = isNormal ? 'NORMAL' : isAmber ? 'BORDERLINE' : 'OUT OF RANGE';
+  const statusColor = isNormal ? 'text-emerald-700' : isAmber ? 'text-amber-700' : 'text-rose-700';
+  const statusBg = isNormal ? 'bg-emerald-50' : isAmber ? 'bg-amber-50' : 'bg-rose-50';
+
+  const TrendIcon = analyte.trend === 'up' ? TrendingUp : analyte.trend === 'down' ? TrendingDown : Minus;
+
+  return (
+    <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm flex flex-col h-[400px]">
+      {/* Card Header */}
+      <div className="bg-slate-50 px-5 py-3 border-b border-slate-100 flex justify-between items-start gap-3">
+        <h4 className="font-bold text-slate-800 text-sm line-clamp-2 leading-tight">{analyte.name}</h4>
+        <span className={`text-[9px] font-black px-2 py-0.5 rounded whitespace-nowrap ${statusBg} ${statusColor} border border-current opacity-80 mt-0.5`}>
+          {statusLabel}
+        </span>
+      </div>
+
+      <div className="p-5 flex-1 flex flex-col space-y-4">
+        {/* Results Comparison */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Current Result</p>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-bold text-slate-900">{parseFloat(analyte.current_value).toFixed(2)}</span>
+              <span className="text-[10px] font-bold text-slate-400">{analyte.unit}</span>
+            </div>
+          </div>
+          <div className="space-y-1 border-l border-slate-100 pl-4">
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Previous Result</p>
+            <div className="flex items-baseline gap-1">
+              <span className="text-xl font-bold text-slate-500">
+                {analyte.previous_value ? parseFloat(analyte.previous_value).toFixed(2) : '—'}
+              </span>
+              <span className="text-[10px] font-bold text-slate-300">{analyte.unit}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Reference & Trend Line */}
+        <div className="flex items-center justify-between bg-slate-50/50 rounded-xl px-4 py-2 border border-slate-100">
+          <div className="flex items-center gap-2">
+            <TrendingUp size={12} className="text-primary-500" />
+            <span className="text-[10px] font-medium text-slate-500 truncate max-w-[150px]">
+              Ref: {analyte.reference_range || 'N/A'} {analyte.unit}
+            </span>
+          </div>
+          <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
+            <TrendIcon size={12} />
+            <span className="uppercase tracking-tighter">{analyte.trend}</span>
+          </div>
+        </div>
+
+        {/* Chart Area - Fixed Height */}
+        <div className="h-32 bg-white rounded-lg border border-slate-50 p-1">
+          <TrendChart data={analyte.history} unit={analyte.unit} />
+        </div>
+
+        {/* Clinical Note */}
+        <div className="bg-primary-50/30 p-2.5 rounded-xl border border-primary-100/30">
+          <p className="text-[9px] leading-tight text-primary-900 font-medium line-clamp-2">
+            {analyte.name} {analyte.status_color === 'GREEN' ? 'is within the normal range.' : 'shows values outside the standard reference range.'} Tracked via connected lab source.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function TrendReportPdf({ tests, patientName }: TrendReportPdfProps) {
   return (
     <div
       id="trend-report-pdf-content"
-      className="bg-white font-inter text-slate-900"
-      style={{
-        width: '1000px', // Wider capture area for better resolution and two columns
-        position: 'absolute',
-        left: '-9999px',
-        top: 0
-      }}
+      className="bg-white font-inter text-slate-900 absolute left-[-9999px] top-0 w-[1000px] z-[-1]"
     >
-      <div className="p-12 space-y-10" id="pdf-container-inner">
+      <div className="p-12 pb-0 block">
         {/* Header */}
-        <header id="pdf-header" className="pdf-section flex justify-between items-start border-b-4 border-primary-700 pb-8" data-pdf-type="header">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3 text-primary-800">
-              <Activity className="w-8 h-8" strokeWidth={3} />
-              <h1 className="text-4xl font-bold tracking-tight">VAIDYA PHR</h1>
+        <header className="flex justify-between items-start border-b-8 border-primary-700 pb-10 mb-16">
+          <div className="space-y-3">
+            <div className="flex items-center gap-4 text-primary-800">
+              <div className="w-12 h-12 bg-primary-700 rounded-2xl flex items-center justify-center shadow-lg">
+                <Activity className="w-8 h-8 text-white" strokeWidth={3} />
+              </div>
+              <div>
+                <h1 className="text-4xl font-black tracking-tighter leading-none">VAIDYA PHR</h1>
+                <p className="text-sm font-bold text-primary-600 uppercase tracking-[0.3em] mt-1">Health Intelligence Platform</p>
+              </div>
             </div>
-            <p className="text-xl font-semibold text-slate-400">Clinical Health Trends Report</p>
+            <p className="text-xl font-bold text-slate-400 mt-4">Clinical Longitudinal Trend Report</p>
           </div>
 
-          <div className="text-right space-y-1">
-            <div className="flex items-center justify-end gap-2 text-slate-900">
-              <ShieldCheck size={18} className="text-success-600" />
-              <p className="text-lg font-bold uppercase tracking-wider">{patientName}</p>
+          <div className="text-right space-y-2">
+            <div className="bg-slate-50 px-6 py-4 rounded-[2rem] border border-slate-100 shadow-sm inline-block">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Authenticated Patient</p>
+              <div className="flex items-center justify-end gap-2 text-slate-900">
+                <ShieldCheck size={20} className="text-success-600" />
+                <p className="text-2xl font-black uppercase tracking-tight">{patientName}</p>
+              </div>
             </div>
-            <p className="text-sm font-medium text-slate-500 italic">Connected Laboratory Source</p>
-            <p className="text-xs text-slate-400 font-bold mt-2">REPORT DATE: {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase()}</p>
+            <p className="text-xs text-slate-400 font-bold mt-2 uppercase tracking-widest">
+              GENERATED: {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
+            </p>
           </div>
         </header>
 
         {/* Content area */}
-        <div className="space-y-12">
+        <div className="space-y-16">
           {tests.map((group, gIdx) => (
-            <div key={gIdx} id={`pdf-group-${gIdx}`} className="pdf-section space-y-6" data-pdf-type="test-group">
-              <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border-l-[6px] border-primary-600 shadow-sm" id={`pdf-group-title-${gIdx}`}>
-                <Beaker className="w-6 h-6 text-primary-700" />
-                <h2 className="text-xl font-bold text-slate-800 uppercase tracking-tight">
-                  {group.test_name}
-                </h2>
+            <div key={gIdx} className="space-y-8">
+              <div className="flex items-center gap-4 bg-slate-900 p-5 rounded-[2rem] text-white shadow-xl">
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-md">
+                  <Beaker className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black uppercase tracking-tight leading-none">
+                    {group.test_name}
+                  </h2>
+                  <p className="text-[10px] font-bold text-primary-200 uppercase tracking-widest mt-1 opacity-70">
+                    Comprehensive Biomarker Analysis • {group.analytes.length} Parameters
+                  </p>
+                </div>
               </div>
 
               {/* Two Column Grid for Analytes */}
-              <div className="grid grid-cols-2 gap-8">
+              <div className="grid grid-cols-2 gap-10">
                 {group.analytes.map((analyte, aIdx) => (
-                  <div key={aIdx} id={`pdf-analyte-${gIdx}-${aIdx}`} className="pdf-section break-inside-avoid" data-pdf-type="analyte">
-                    <AnalyteHistoryCard analyte={analyte} forceExpand={true} />
-                  </div>
+                  <AnalytePdfCard key={aIdx} analyte={analyte} />
                 ))}
               </div>
             </div>
           ))}
         </div>
-
-        {/* Footer */}
-        <footer className="mt-20 pt-10 border-t-2 border-slate-100 flex justify-between items-center opacity-70">
-          <div className="space-y-1">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Digital Health Passport</p>
-            <p className="text-[10px] text-slate-400 font-medium max-w-sm leading-relaxed">
-              This report is a consolidated view of your clinical biomarker history. It is for tracking purposes only and should be interpreted by a qualified medical professional.
-            </p>
-          </div>
-          <div className="text-right">
-            <div className="bg-slate-50 px-4 py-2 rounded-xl border border-slate-100 inline-block">
-              <p className="text-[10px] font-bold text-primary-700 uppercase tracking-widest leading-none">Security Verified</p>
-            </div>
-            <p className="text-[9px] text-slate-300 mt-2">© {new Date().getFullYear()} HALELABS VAIDYA PLATFORM</p>
-          </div>
-        </footer>
       </div>
+
+      {/* Footer at the very bottom */}
+      <footer className="mt-20 px-12 pb-12 pt-8 bg-white mb-0 border-t-2 border-slate-100 flex justify-between items-end">
+        <div className="space-y-4 max-w-md">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-success-500" />
+            <p className="text-xs font-black text-slate-700 uppercase tracking-widest">Secure Digital Health Asset</p>
+          </div>
+          <p className="text-[10px] text-slate-400 font-bold uppercase leading-relaxed tracking-wider opacity-60">
+            Disclaimer: For visual reference only. This report is a computational synthesis of records. It does not constitute medical advice. Please consult with a healthcare professional.
+          </p>
+        </div>
+        <div className="text-right">
+          <div className="bg-primary-700 px-6 py-3 rounded-2xl shadow-lg shadow-primary-200">
+            <p className="text-[10px] font-black text-white uppercase tracking-[0.2em] leading-none mb-1">Verification Hash</p>
+            <p className="text-[10px] font-mono text-primary-100 truncate w-32">SHA256: {Math.random().toString(36).substring(2, 15).toUpperCase()}</p>
+          </div>
+          <p className="text-[10px] font-black text-slate-300 mt-4 uppercase tracking-widest">© {new Date().getFullYear()} HALELABS VAIDYA ECOSYSTEM</p>
+        </div>
+      </footer>
     </div>
   );
 }

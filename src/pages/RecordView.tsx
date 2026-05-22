@@ -8,8 +8,7 @@ import {
   CheckCircle, 
   AlertTriangle, 
   XCircle, 
-  ShieldCheck, 
-  TrendingUp 
+  ShieldCheck
 } from 'lucide-react';
 import { recordsApi, limsApi } from '../api/client';
 import { useActiveProfile } from '../context/ProfileContext';
@@ -75,7 +74,12 @@ export default function RecordView() {
     setDownloading(true);
     try {
       const response = await recordsApi.download(parseInt(id));
-      const contentType = response.headers?.['content-type'] || 'application/octet-stream';
+      const rawContentType = response.headers?.['content-type'];
+      const contentType = typeof rawContentType === 'string'
+        ? rawContentType
+        : Array.isArray(rawContentType) && rawContentType.length > 0
+          ? rawContentType[0]
+          : 'application/octet-stream';
       const blob = new Blob([response.data], { type: contentType });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -155,7 +159,7 @@ export default function RecordView() {
   if (loading) return <div className="flex h-full items-center justify-center p-4 text-primary-700 font-extrabold uppercase tracking-[0.2em] text-xs">Loading report...</div>;
 
   if (error || !record) return (
-    <div className="max-w-md mx-auto px-10 py-24 text-center space-y-8 font-inter">
+    <div className="w-full px-4 sm:px-6 py-24 text-center space-y-8 font-inter">
       <div className="w-20 h-20 bg-rose-50 rounded-[1.5rem] flex items-center justify-center mx-auto text-rose-500 shadow-xl shadow-rose-100">
         <AlertCircle size={44} strokeWidth={2.5} />
       </div>
@@ -170,7 +174,7 @@ export default function RecordView() {
   const { order_details, analytes } = record;
 
   return (
-    <div className="max-w-md mx-auto px-6 py-8 pb-32 space-y-10 font-inter">
+    <div className="w-full px-4 sm:px-6 py-8 pb-32 space-y-10 font-inter">
       {/* 🚀 Unified Report Header */}
       <header className="space-y-6">
         <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -251,36 +255,46 @@ export default function RecordView() {
           <span className="text-[10px] font-black text-primary-700 uppercase tracking-widest">{analytes.length} Results</span>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {analytes.map((analyte, idx) => (
-            <div key={idx} className="bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-soft hover:shadow-medium transition-all space-y-4 group">
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <h4 className="text-[15px] font-bold text-slate-900 group-hover:text-primary-700 transition-colors leading-snug">{analyte.name}</h4>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Method:</span>
-                    <span className="text-[10px] font-semibold text-slate-500 uppercase">{analyte.method || 'Standard'}</span>
-                  </div>
+            <div 
+              key={idx} 
+              className="bg-white p-4 rounded-[1.25rem] border border-slate-100 shadow-soft hover:shadow-medium hover:border-primary-100 transition-all flex items-center justify-between gap-4 group"
+            >
+              {/* Left Side: Name & Context */}
+              <div className="flex-1 min-w-0">
+                <h4 className="text-[14px] font-bold text-slate-900 group-hover:text-primary-700 transition-colors truncate">
+                  {analyte.name}
+                </h4>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                    {analyte.method || 'Standard'}
+                  </span>
+                  {analyte.reference_range && (
+                    <>
+                      <span className="w-1 h-1 rounded-full bg-slate-200" />
+                      <span className="text-[10px] text-slate-400 font-medium truncate">
+                        Ref: {formatReferenceRange(analyte.reference_range)}
+                      </span>
+                    </>
+                  )}
                 </div>
-                {getStatusIcon(analyte.status_color)}
               </div>
 
-              <div className="flex items-baseline gap-2 bg-slate-50 rounded-2xl px-5 py-4">
-                <span className="text-3xl font-bold text-slate-900 tracking-tight tabular-nums">{formatTwoDecimals(analyte.result)}</span>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{analyte.unit}</span>
-              </div>
-
-              {analyte.reference_range && (
-                <div className="bg-primary-50/30 p-3.5 rounded-2xl flex items-center gap-3 border border-primary-100/20">
-                  <div className="w-8 h-8 bg-white border border-primary-100/50 rounded-lg flex items-center justify-center text-primary-600 shadow-sm shrink-0">
-                    <TrendingUp size={14} strokeWidth={2.5} />
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold text-primary-400 uppercase tracking-wider mb-0.5">Reference Range</p>
-                    <p className="text-[12px] font-bold text-slate-700 leading-none">{formatReferenceRange(analyte.reference_range)}</p>
-                  </div>
+              {/* Right Side: Result & Status */}
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="text-right">
+                  <span className="text-xl font-bold text-slate-900 tracking-tight tabular-nums">
+                    {formatTwoDecimals(analyte.result)}
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-400 ml-1.5 uppercase tracking-wide">
+                    {analyte.unit}
+                  </span>
                 </div>
-              )}
+                <div className="flex items-center justify-center p-1.5 rounded-xl bg-slate-50 group-hover:bg-white group-hover:shadow-inner transition-all">
+                  {getStatusIcon(analyte.status_color)}
+                </div>
+              </div>
             </div>
           ))}
         </div>

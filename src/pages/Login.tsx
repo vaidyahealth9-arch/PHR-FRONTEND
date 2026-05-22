@@ -1,21 +1,61 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { authApi } from '../api/client';
 import { Phone, ArrowRight, CheckCircle, AlertCircle, Lock } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
+  const isOtpRoute = location.pathname === '/otp';
+  const [step, setStep] = useState<'phone' | 'otp'>(isOtpRoute ? 'otp' : 'phone');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
+  const autoOtpSentRef = useRef(false);
+
+  const signupState = location.state as
+    | {
+        phoneNumber?: string;
+        autoSendOtp?: boolean;
+        fromSignup?: boolean;
+      }
+    | null;
 
   const extractErrorMessage = (err: any, fallback: string) => {
     return err?.response?.data?.error?.message || err?.response?.data?.detail || fallback;
   };
+
+  useEffect(() => {
+    if (!signupState?.phoneNumber) {
+      return;
+    }
+
+    setPhoneNumber(signupState.phoneNumber);
+    setStep('otp');
+    setError('');
+
+    if (!signupState.autoSendOtp || autoOtpSentRef.current) {
+      return;
+    }
+
+    autoOtpSentRef.current = true;
+
+    const sendOtpAfterSignup = async () => {
+      setLoading(true);
+      try {
+        await authApi.sendOtp(signupState.phoneNumber as string);
+      } catch (err: any) {
+        setError(extractErrorMessage(err, 'Failed to send OTP. Please request a new one.'));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void sendOtpAfterSignup();
+  }, [signupState?.autoSendOtp, signupState?.phoneNumber]);
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,9 +115,9 @@ export default function Login() {
         <div className="auth-card">
           <div className="bg-gradient-to-r from-primary-800 to-primary-700 text-white px-4 sm:px-5 pt-4 sm:pt-5 pb-5 sm:pb-6">
             <div>
-              <p className="text-xs font-semibold opacity-90">Vaidya Secure Login</p>
-              <h1 className="text-xl sm:text-2xl font-black leading-tight mt-1">Welcome</h1>
-              <p className="text-xs text-primary-100 mt-1">Fast OTP-based sign in</p>
+                <p className="text-xs font-semibold opacity-90">{isOtpRoute ? 'OTP Verification' : 'Vaidya Secure Login'}</p>
+                <h1 className="text-xl sm:text-2xl font-black leading-tight mt-1">{isOtpRoute ? 'Verify your number' : 'Welcome'}</h1>
+                <p className="text-xs text-primary-100 mt-1">{isOtpRoute ? 'Confirm your account to continue' : 'Fast OTP-based sign in'}</p>
             </div>
             <p className="mt-3 text-sm text-primary-50 leading-6 break-words">
               {step === 'phone'
@@ -110,12 +150,12 @@ export default function Login() {
                       autoComplete="tel"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
-                      placeholder="+91 98765 43210"
+                      placeholder="98765 43210"
                       className="input pl-11 sm:pl-12 text-base rounded-xl border-slate-300"
                       required
                     />
                   </div>
-                  <p className="text-xs text-slate-500 leading-5">Example: +91 98765 43210</p>
+                  <p className="text-xs text-slate-500 leading-5">Example: 98765 43210</p>
                 </div>
 
                 <button

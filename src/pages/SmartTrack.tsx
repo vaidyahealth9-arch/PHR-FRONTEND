@@ -13,11 +13,10 @@ interface TestGroup {
 }
 
 export default function SmartTrack() {
-  const { profiles } = useActiveProfile();
+  const { profiles, activeProfileId } = useActiveProfile();
+  const validActiveProfileId = activeProfileId && profiles.some((p) => p.id === activeProfileId) ? activeProfileId : '';
 
-  // analyte history is tied to the logged-in user's mobile number on the backend,
-  // not to a specific profile — so always fetch it without waiting for profile selection.
-  const { data: historyData, isLoading } = useAnalyteHistory(undefined, true);
+  const { data: historyData, isLoading } = useAnalyteHistory(validActiveProfileId || undefined, !!validActiveProfileId);
   const { data: profilesList } = useProfiles();
   const [exporting, setExporting] = useState(false);
 
@@ -54,7 +53,7 @@ export default function SmartTrack() {
   }
 
   return (
-    <div className="py-5 pb-24 space-y-5 max-w-lg mx-auto print:pb-4 print:space-y-4">
+    <div className="w-full px-4 sm:px-6 py-5 pb-24 space-y-5 print:pb-4 print:space-y-4">
       {/* Header */}
       <div className="bg-gradient-to-br from-primary-700 via-primary-600 to-success-600 rounded-[2rem] p-5 text-white shadow-premium relative overflow-hidden print:rounded-xl print:shadow-none print:bg-primary-700">
         <div className="absolute right-0 top-0 w-36 h-36 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 print:hidden" />

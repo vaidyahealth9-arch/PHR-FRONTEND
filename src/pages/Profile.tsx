@@ -201,7 +201,7 @@ export default function Profile() {
     <motion.div 
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="max-w-md mx-auto px-6 py-6 pb-24 space-y-8"
+      className="w-full px-4 sm:px-6 py-6 pb-24 space-y-8"
     >
       {/* Error Alert */}
       <AnimatePresence>

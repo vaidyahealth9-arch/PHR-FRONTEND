@@ -97,7 +97,7 @@ export default function UploadRecord() {
   };
 
   return (
-    <div className="max-w-md mx-auto px-6 py-6 pb-32 space-y-10 font-inter">
+    <div className="w-full px-4 sm:px-6 py-6 pb-32 space-y-10 font-inter">
       {/* Navigation Header */}
       <header className="flex items-center justify-between">
         <button onClick={() => navigate(-1)} className="w-10 h-10 bg-white rounded-xl border border-slate-100 flex items-center justify-center shadow-sm active:scale-95 text-slate-400">

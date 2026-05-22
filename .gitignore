@@ -8,6 +8,7 @@ dist/
 dist-ssr/
 build/
 *.local
+docs/
 
 # Editor directories and files
 .vscode/*

@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "start": "vite preview",
+    "prod": "npm run build && vite preview --host 0.0.0.0 --port 4173",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "type-check": "tsc --noEmit",
@@ -14,7 +16,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.17.9",
-    "axios": "^1.6.5",
+    "axios": "^1.15.2",
     "clsx": "^2.1.0",
     "framer-motion": "^12.38.0",
     "html2canvas": "^1.4.1",
@@ -22,8 +24,11 @@
     "lucide-react": "^0.309.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.21.1",
+    "react-router-dom": "^6.30.3",
     "recharts": "^3.4.1"
+  },
+  "overrides": {
+    "follow-redirects": "^1.16.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",
