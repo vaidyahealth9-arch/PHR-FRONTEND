@@ -39,10 +39,10 @@ images:
 
 substitutions:
   _REGION: 'asia-south1'
-  _AR_REPO: 'hale-phr'
-  _SERVICE_NAME: 'phr-frontend'
-  _RUNTIME_SA: 'phr-frontend-sa@PROJECT_ID.iam.gserviceaccount.com'
-  _PHR_API_UPSTREAM: 'https://phr-backend-REPLACE_ME.a.run.app'
+  _AR_REPO: 'vaidya-apps'
+  _SERVICE_NAME: 'phr-web'
+  _RUNTIME_SA: '299118511394-compute@developer.gserviceaccount.com'
+  _PHR_API_UPSTREAM: 'https://phr-backend-299118511394.asia-south1.run.app'
 
 options:
   logging: CLOUD_LOGGING_ONLY
