@@ -126,7 +126,7 @@ export default function Records() {
             </div>
             <div className="min-w-0">
               <h1 className="text-[1.3rem] sm:text-[1.55rem] font-bold tracking-tight truncate leading-tight">
-                {userName.split(' ')[0]}'s Health Records
+                {userName.split(' ')[0]}&apos;s Health Records
               </h1>
               <p className="text-primary-100 text-xs font-medium mt-0.5">All medical files in one place</p>
             </div>
