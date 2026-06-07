@@ -40,4 +40,4 @@ jobs:
           image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO }}/${{ env.SERVICE }}:${{ github.sha }}
           flags: '--allow-unauthenticated --port=8080'
           env_vars: |-
-            PHR_API_UPSTREAM=https://phr-backend-299118511394.asia-south1.run.app
+            PHR_API_UPSTREAM=https://dev-api.phr.vaidyahealth.com
