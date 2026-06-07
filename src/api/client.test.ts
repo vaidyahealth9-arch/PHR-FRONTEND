@@ -60,7 +60,7 @@ describe('api client interceptors', () => {
       .reply(200, [{ id: 1 }]);
 
     axiosMock
-      .onPost('http://localhost:8000/api/v1/auth/refresh')
+      .onPost(new RegExp('/api/v1/auth/refresh'))
       .reply(200, {
         access_token: 'new-access-token',
         refresh_token: 'new-refresh-token',
