@@ -48,6 +48,14 @@ export default function RecordView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
+
+  const toggleRow = (idx: number) => {
+    setExpandedRows((prev) => ({
+      ...prev,
+      [idx]: !prev[idx],
+    }));
+  };
 
   const { profiles, activeProfileId } = useActiveProfile();
   const validActiveProfileId = activeProfileId && profiles.some((p) => p.id === activeProfileId)
@@ -256,47 +264,63 @@ export default function RecordView() {
         </div>
 
         <div className="space-y-3">
-          {analytes.map((analyte, idx) => (
-            <div 
-              key={idx} 
-              className="bg-white p-4 rounded-[1.25rem] border border-slate-100 shadow-soft hover:shadow-medium hover:border-primary-100 transition-all flex items-center justify-between gap-4 group"
-            >
-              {/* Left Side: Name & Context */}
-              <div className="flex-1 min-w-0">
-                <h4 className="text-[14px] font-bold text-slate-900 group-hover:text-primary-700 transition-colors truncate">
-                  {analyte.name}
-                </h4>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                    {analyte.method || 'Standard'}
-                  </span>
-                  {analyte.reference_range && (
-                    <>
-                      <span className="w-1 h-1 rounded-full bg-slate-200" />
-                      <span className="text-[10px] text-slate-400 font-medium truncate">
-                        Ref: {formatReferenceRange(analyte.reference_range)}
+          {analytes.map((analyte, idx) => {
+            const isExpanded = !!expandedRows[idx];
+            return (
+              <div 
+                key={idx} 
+                onClick={() => toggleRow(idx)}
+                className="bg-white p-4 rounded-[1.25rem] border border-slate-100 shadow-soft hover:shadow-medium hover:border-primary-100 transition-all flex flex-col gap-3 cursor-pointer group select-none"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  {/* Left Side: Name & Context */}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-[14px] font-bold text-slate-900 group-hover:text-primary-700 transition-colors truncate">
+                      {analyte.name}
+                    </h4>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                        {analyte.method || 'Standard'}
                       </span>
-                    </>
-                  )}
-                </div>
-              </div>
+                      {analyte.reference_range && !isExpanded && (
+                        <>
+                          <span className="w-1 h-1 rounded-full bg-slate-200" />
+                          <span className="text-[10px] text-slate-400 font-medium truncate">
+                            Ref: {formatReferenceRange(analyte.reference_range)}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
 
-              {/* Right Side: Result & Status */}
-              <div className="flex items-center gap-3 shrink-0">
-                <div className="text-right">
-                  <span className="text-xl font-bold text-slate-900 tracking-tight tabular-nums">
-                    {formatTwoDecimals(analyte.result)}
-                  </span>
-                  <span className="text-[10px] font-bold text-slate-400 ml-1.5 uppercase tracking-wide">
-                    {analyte.unit}
-                  </span>
+                  {/* Right Side: Result & Status */}
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="text-right">
+                      <span className="text-xl font-bold text-slate-900 tracking-tight tabular-nums">
+                        {formatTwoDecimals(analyte.result)}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-400 ml-1.5 uppercase tracking-wide">
+                        {analyte.unit}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-center p-1.5 rounded-xl bg-slate-50 group-hover:bg-white group-hover:shadow-inner transition-all">
+                      {getStatusIcon(analyte.status_color)}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center justify-center p-1.5 rounded-xl bg-slate-50 group-hover:bg-white group-hover:shadow-inner transition-all">
-                  {getStatusIcon(analyte.status_color)}
-                </div>
+
+                {/* Expanded details */}
+                {isExpanded && analyte.reference_range && (
+                  <div className="pt-3 border-t border-slate-50 space-y-1.5 transition-all duration-300">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Reference Range</span>
+                    <div className="bg-slate-50/50 p-3 rounded-xl border border-slate-100/50 text-xs font-semibold text-slate-600 leading-relaxed break-words whitespace-pre-line">
+                      {formatReferenceRange(analyte.reference_range)}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
