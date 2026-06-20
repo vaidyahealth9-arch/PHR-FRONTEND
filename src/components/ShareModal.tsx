@@ -78,7 +78,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ recordId, onClose, onSha
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
       <div className="bg-white rounded-[1.75rem] shadow-xl max-w-md w-full mx-4 border border-slate-100 overflow-hidden">
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-gradient-to-r from-primary-50 to-success-50">
