@@ -469,9 +469,9 @@ export default function Profile() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-[2.5rem] bg-white shadow-premium relative"
+              className="max-h-[90vh] w-full max-w-sm flex flex-col rounded-[2.5rem] bg-white shadow-premium relative overflow-hidden"
             >
-              <div className="sticky top-0 z-10 flex items-center justify-between p-6 bg-white/90 backdrop-blur-md border-b border-slate-50">
+              <div className="sticky top-0 z-10 flex items-center justify-between p-6 bg-white/90 backdrop-blur-md border-b border-slate-50 shrink-0">
                 <h4 className="text-base font-black text-slate-900">Edit Profile</h4>
                 <button 
                   onClick={() => setShowEditUser(false)}
@@ -481,7 +481,7 @@ export default function Profile() {
                 </button>
               </div>
 
-              <div className="p-6 space-y-5">
+              <div className="overflow-y-auto flex-1 p-6 space-y-5">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">First Name</label>
@@ -542,9 +542,9 @@ export default function Profile() {
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Blood Group</label>
                   <select
-                    value={editForm.blood_group}
-                    onChange={(e) => setEditForm((p) => ({ ...p, blood_group: e.target.value }))}
-                    className="w-full bg-white border border-slate-100 rounded-2xl px-4 py-3.5 text-xs font-bold focus:ring-2 focus:ring-primary-500 transition-all appearance-none"
+                     value={editForm.blood_group}
+                     onChange={(e) => setEditForm((p) => ({ ...p, blood_group: e.target.value }))}
+                     className="w-full bg-white border border-slate-100 rounded-2xl px-4 py-3.5 text-xs font-bold focus:ring-2 focus:ring-primary-500 transition-all appearance-none"
                   >
                     {BLOOD_GROUPS.map((bg) => (
                       <option key={bg} value={bg}>{bg || 'Select blood group'}</option>
@@ -582,11 +582,13 @@ export default function Profile() {
                     />
                   </div>
                 </div>
+              </div>
 
+              <div className="sticky bottom-0 z-10 p-6 bg-white/90 backdrop-blur-md border-t border-slate-50 shrink-0 rounded-b-[2.5rem]">
                 <button
                   onClick={handleSaveUser}
                   disabled={savingUser}
-                  className="w-full btn btn-primary btn-md rounded-2xl shadow-premium py-4 text-[11px] font-black uppercase tracking-[0.2em] active:scale-95 transition-all mt-2"
+                  className="w-full btn btn-primary btn-md rounded-2xl shadow-premium py-4 text-[11px] font-black uppercase tracking-[0.2em] active:scale-95 transition-all"
                 >
                   {savingUser ? <Loader2 size={18} className="animate-spin" /> : 'Save Profile'}
                 </button>
@@ -604,9 +606,9 @@ export default function Profile() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="w-full max-w-sm rounded-[2.5rem] bg-white shadow-premium relative overflow-hidden"
+              className="max-h-[90vh] w-full max-w-sm flex flex-col rounded-[2.5rem] bg-white shadow-premium relative overflow-hidden"
             >
-              <div className="p-6 bg-gradient-to-br from-primary-800 to-primary-700 text-white relative">
+              <div className="p-6 bg-gradient-to-br from-primary-800 to-primary-700 text-white relative shrink-0">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-2xl -mr-12 -mt-12" />
                 <div className="relative flex items-center justify-between">
                   <div>
@@ -622,7 +624,7 @@ export default function Profile() {
                 </div>
               </div>
 
-              <div className="p-6 space-y-4">
+              <div className="overflow-y-auto flex-1 p-6 space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
                   <input
@@ -683,7 +685,9 @@ export default function Profile() {
                     <option value="other">Other</option>
                   </select>
                 </div>
+              </div>
 
+              <div className="sticky bottom-0 z-10 p-6 bg-white/90 backdrop-blur-md border-t border-slate-50 shrink-0 rounded-b-[2.5rem]">
                 <button
                   onClick={handleAddFamilyMember}
                   disabled={createProfile.isPending}
@@ -707,9 +711,9 @@ export default function Profile() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="w-full max-w-sm rounded-[2.5rem] bg-white shadow-premium relative overflow-hidden"
+              className="max-h-[90vh] w-full max-w-sm flex flex-col rounded-[2.5rem] bg-white shadow-premium relative overflow-hidden"
             >
-              <div className="sticky top-0 z-10 flex items-center justify-between p-6 bg-white/90 backdrop-blur-md border-b border-slate-50">
+              <div className="sticky top-0 z-10 flex items-center justify-between p-6 bg-white/90 backdrop-blur-md border-b border-slate-50 shrink-0">
                 <h4 className="text-base font-black text-slate-900">Edit Family Member</h4>
                 <button 
                   onClick={() => setEditingFamilyMember(null)}
@@ -719,7 +723,7 @@ export default function Profile() {
                 </button>
               </div>
 
-              <div className="p-6 space-y-4">
+              <div className="overflow-y-auto flex-1 p-6 space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
                   <input
@@ -769,7 +773,9 @@ export default function Profile() {
                     </select>
                   </div>
                 </div>
+              </div>
 
+              <div className="sticky bottom-0 z-10 p-6 bg-white/90 backdrop-blur-md border-t border-slate-50 shrink-0 rounded-b-[2.5rem]">
                 <button
                   onClick={handleEditFamilyMember}
                   className="w-full btn btn-primary btn-md rounded-2xl shadow-premium py-4 text-[11px] font-black uppercase tracking-[0.2em] active:scale-95 transition-all"
