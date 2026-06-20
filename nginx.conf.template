@@ -10,9 +10,9 @@ server {
     }
 
     location /api/ {
-        resolver 8.8.8.8 valid=30s;
+        resolver 127.0.0.11 valid=10s ipv6=off;
         set $phr_api_upstream ${PHR_API_UPSTREAM};
-        proxy_pass $phr_api_upstream;
+        proxy_pass $phr_api_upstream$request_uri;
         proxy_set_header Host ${PHR_API_HOST};
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -23,9 +23,9 @@ server {
     }
 
     location /ws/ {
-        resolver 8.8.8.8 valid=30s;
+        resolver 127.0.0.11 valid=10s ipv6=off;
         set $phr_ws_upstream ${PHR_API_UPSTREAM};
-        proxy_pass $phr_ws_upstream;
+        proxy_pass $phr_ws_upstream$request_uri;
         proxy_set_header Host ${PHR_API_HOST};
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

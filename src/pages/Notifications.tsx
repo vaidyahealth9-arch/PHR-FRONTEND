@@ -1,6 +1,4 @@
-import { useNavigate } from 'react-router-dom';
 import { 
-  ArrowLeft, 
   Bell, 
   BellOff,
   Loader2,
@@ -15,6 +13,9 @@ import { useActiveProfile } from '../context/ProfileContext';
 import { useRecords } from '../hooks/useApi';
 import { markNotificationsSeenNow } from '../utils/notifications';
 import { DEFAULT_SETTINGS, SETTINGS_CHANGED_EVENT, SETTINGS_STORAGE_KEY, loadAppSettings } from '../utils/settings';
+import BackButton from '../components/BackButton';
+import EmptyState from '../components/EmptyState';
+
 
 type LiveNotification = {
   id: string;
@@ -28,7 +29,6 @@ type LiveNotification = {
 };
 
 export default function Notifications() {
-  const navigate = useNavigate();
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [markingRead, setMarkingRead] = useState(false);
   const { profiles, activeProfileId } = useActiveProfile();
@@ -143,12 +143,7 @@ export default function Notifications() {
     <div className="py-5 pb-28 space-y-5 sm:space-y-6 font-inter">
       {/* Header */}
       <header className="flex items-center gap-3">
-        <button 
-          onClick={() => navigate(-1)}
-          className="w-10 h-10 bg-white rounded-xl border border-slate-100 flex items-center justify-center shadow-sm active:scale-95 transition-all text-slate-400 hover:text-primary-700"
-        >
-          <ArrowLeft size={18} />
-        </button>
+        <BackButton />
         <div>
           <h1 className="text-xl sm:text-2xl font-lexend font-extrabold text-slate-900 leading-none">Notifications</h1>
           <p className="text-xs font-semibold text-slate-500 mt-1">Live activity stream</p>
@@ -172,6 +167,20 @@ export default function Notifications() {
           <Loader2 className="w-6 h-6 text-primary-700 animate-spin" />
           <p className="text-sm font-medium text-slate-600">Loading live activity...</p>
         </div>
+      ) : !hasNotifications ? (
+        <EmptyState
+          icon={<BellOff size={24} />}
+          title={
+            !settings.pushNotifications && !settings.smsAlerts
+              ? "All notifications are turned off"
+              : "No notifications"
+          }
+          subtitle={
+            !settings.pushNotifications && !settings.smsAlerts
+              ? "Enable notifications in Settings to receive updates."
+              : "You're all caught up! There are no active notifications to show."
+          }
+        />
       ) : (
         <div className="space-y-4">
           {visibleNotifications.map((notif, idx) => (
@@ -180,7 +189,7 @@ export default function Notifications() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
-            className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm flex gap-3 sm:gap-4 hover:border-primary-100 transition-all group"
+              className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm flex gap-3 sm:gap-4 hover:border-primary-100 transition-all group"
             >
               <div className={`w-12 h-12 flex-shrink-0 rounded-2xl flex items-center justify-center ${notif.bg} ${notif.color}`}>
                 <notif.icon size={22} strokeWidth={2.5} />
@@ -202,21 +211,15 @@ export default function Notifications() {
       )}
 
       {/* Footer Info */}
-      <div className="p-8 border border-dashed border-slate-200 rounded-[2rem] text-center space-y-2">
-        {settings.pushNotifications || settings.smsAlerts ? (
-          <>
-            <Bell size={24} className="mx-auto text-slate-200" />
-            <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
-              {visibleNotifications.length === 0 ? 'No live notifications for current preferences' : 'Live notifications update automatically'}
-            </p>
-          </>
-        ) : (
-          <>
-            <BellOff size={24} className="mx-auto text-slate-300" />
-            <p className="text-xs font-semibold text-slate-500">All notifications are turned off in Settings.</p>
-          </>
-        )}
-      </div>
+      {hasNotifications && (
+        <div className="p-8 border border-dashed border-slate-200 rounded-[2rem] text-center space-y-2">
+          <Bell size={24} className="mx-auto text-slate-200" />
+          <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+            Live notifications update automatically
+          </p>
+        </div>
+      )}
     </div>
+
   );
 }

@@ -18,9 +18,11 @@ interface HistoryPoint {
 interface TrendChartProps {
   data: HistoryPoint[];
   unit?: string;
+  animate?: boolean;
+  className?: string;
 }
 
-export const TrendChart: React.FC<TrendChartProps> = ({ data, unit = '' }) => {
+export const TrendChart: React.FC<TrendChartProps> = ({ data, unit = '', animate = true, className = "w-full h-full min-h-[180px]" }) => {
   if (!data || data.length === 0) {
     return null;
   }
@@ -44,7 +46,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ data, unit = '' }) => {
   };
 
   return (
-    <div className="w-full h-full min-h-[180px]">
+    <div className={className}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={graphData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
@@ -74,6 +76,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ data, unit = '' }) => {
             strokeWidth={2.5}
             dot={{ r: 4, strokeWidth: 2, fill: '#ffffff' }}
             activeDot={{ r: 6, strokeWidth: 0, fill: '#147ea3' }}
+            isAnimationActive={animate}
             animationDuration={800}
           />
         </LineChart>

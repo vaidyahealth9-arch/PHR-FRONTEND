@@ -2,12 +2,15 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   FileText, RefreshCw, Upload, Building2, Loader2,
-  ChevronRight, Download, ShieldCheck, Clock
+  ChevronRight, Download, ShieldCheck, Clock, Search, X
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { authApi, limsApi } from '../api/client';
 import { useProfiles, useRecords } from '../hooks/useApi';
 import { useActiveProfile } from '../context/ProfileContext';
+import PageHeader from '../components/PageHeader';
+import ProfileSwitcher from '../components/ProfileSwitcher';
+import EmptyState from '../components/EmptyState';
 
 const LIMS_RECORD_ID_OFFSET = 2_000_000_000;
 
@@ -18,24 +21,25 @@ const SOURCE_BADGE: Record<string, { label: string; className: string }> = {
 };
 
 export default function Records() {
-  const { profiles, activeProfileId, setActiveProfileId } = useActiveProfile();
+  const { profiles, activeProfileId } = useActiveProfile();
   const { isLoading: profilesLoading } = useProfiles();
 
   const [userName, setUserName] = useState<string>('User');
   const [limsBillCount, setLimsBillCount] = useState<number>(0);
   const [openingReportId, setOpeningReportId] = useState<number | null>(null);
   const [openingType, setOpeningType] = useState<'regular' | 'smart' | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const realtimePollMs = Number(import.meta.env.VITE_REALTIME_POLL_MS || '20000');
-  const validActiveProfileId = activeProfileId && profiles.some((p) => p.id === activeProfileId)
-    ? activeProfileId
-    : '';
+  const validActiveProfileId =
+    activeProfileId && profiles.some((p) => p.id === activeProfileId) ? activeProfileId : '';
 
   const recordsQuery = useRecords(
     validActiveProfileId,
     { page: 1, page_size: 50, sort_by: 'date', sort_order: 'desc' },
     { refetchIntervalMs: realtimePollMs }
   );
+
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -45,7 +49,9 @@ export default function Records() {
         if (profile.full_name) setUserName(profile.full_name);
         else if (profile.first_name)
           setUserName(`${profile.first_name}${profile.last_name ? ` ${profile.last_name}` : ''}`);
-      } catch { setUserName('User'); }
+      } catch {
+        setUserName('User');
+      }
     };
     fetchUserProfile();
   }, []);
@@ -55,30 +61,47 @@ export default function Records() {
       try {
         const billsRes = await limsApi.getLinkedBills(validActiveProfileId || undefined);
         setLimsBillCount(Array.isArray(billsRes.data) ? billsRes.data.length : 0);
-      } catch { setLimsBillCount(0); }
+      } catch {
+        setLimsBillCount(0);
+      }
     };
     fetchBills();
   }, [validActiveProfileId]);
 
-  const records: any[] = recordsQuery.data?.items || [];
+  const allRecords: any[] = recordsQuery.data?.items || [];
   const recordsTotal = recordsQuery.data?.total ?? 0;
+
+  // Client-side search filter
+  const records = useMemo(() => {
+    if (!searchQuery.trim()) return allRecords;
+    const q = searchQuery.toLowerCase();
+    return allRecords.filter((r: any) => {
+      const names = (r.test_names || []).join(' ').toLowerCase();
+      const lab = (r.lab_name || '').toLowerCase();
+      const id = (r.display_id || '').toLowerCase();
+      return names.includes(q) || lab.includes(q) || id.includes(q);
+    });
+  }, [allRecords, searchQuery]);
+
   const limsRecords = records.filter((r: any) => r.metadata?.source === 'lims');
   const otherRecords = records.filter((r: any) => r.metadata?.source !== 'lims');
 
   const thisMonthCount = useMemo(() => {
     const now = new Date();
-    return records.filter((r: any) => {
+    return allRecords.filter((r: any) => {
       const d = new Date(r.date);
       return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
     }).length;
-  }, [records]);
+  }, [allRecords]);
 
   const openSignedReport = async (encodedOrderId: number, type: 'regular' | 'smart') => {
     const realLimsId = encodedOrderId - LIMS_RECORD_ID_OFFSET;
     try {
       setOpeningReportId(encodedOrderId);
       setOpeningType(type);
-      const response = await limsApi.downloadLinkedReportPdf(realLimsId, type, true, validActiveProfileId || undefined);
+      const response = await limsApi.downloadLinkedReportPdf(
+        realLimsId, type, true, validActiveProfileId || undefined
+      );
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -104,9 +127,9 @@ export default function Records() {
     );
   }
 
-  const quickStats = [
+  const headerStats = [
     { label: 'Total', value: String(recordsTotal) },
-    { label: 'LIMS', value: String(limsRecords.length) },
+    { label: 'LIMS', value: String(allRecords.filter((r: any) => r.metadata?.source === 'lims').length) },
     { label: 'This Month', value: String(thisMonthCount) },
   ];
 
@@ -116,48 +139,22 @@ export default function Records() {
       animate={{ opacity: 1, y: 0 }}
       className="py-4 pb-24 space-y-4 sm:space-y-5"
     >
-      {/* Header */}
-      <div className="bg-gradient-to-br from-primary-800 via-primary-700 to-success-700 rounded-[1.5rem] sm:rounded-[1.75rem] shadow-premium p-4 sm:p-5 text-white relative overflow-hidden border border-white/10">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16" />
-        <div className="relative space-y-5">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center shadow-lg border border-white/30 flex-shrink-0">
-              <FileText className="text-white w-6 h-6" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-[1.3rem] sm:text-[1.55rem] font-bold tracking-tight truncate leading-tight">
-                {userName.split(' ')[0]}&apos;s Health Records
-              </h1>
-              <p className="text-primary-100 text-xs font-medium mt-0.5">All medical files in one place</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {quickStats.map((stat, i) => (
-              <div key={i} className="bg-white/12 backdrop-blur-md rounded-2xl p-3 border border-white/20 text-center">
-                <p className="text-xl font-bold tracking-tight leading-none">{stat.value}</p>
-                <p className="text-[11px] font-medium text-primary-100 mt-1">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* Unified Header */}
+      <PageHeader
+        icon={<FileText size={22} strokeWidth={2} />}
+        title={`${userName.split(' ')[0]}'s Records`}
+        subtitle="All medical files in one place"
+        stats={headerStats}
+      />
 
       {/* Profile + Actions */}
       <div className="glass-panel rounded-2xl p-4 space-y-3">
-        <label className="text-xs font-semibold text-slate-600 block">Active Profile</label>
-        <select
-          value={activeProfileId || ''}
-          onChange={(e) => setActiveProfileId(e.target.value)}
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent font-semibold text-slate-900 transition-all"
-        >
-          {profiles.map((profile) => (
-            <option key={profile.id} value={profile.id}>
-              {profile.full_name} {!profile.is_primary ? `(${profile.relationship})` : '(Primary)'}
-            </option>
-          ))}
-        </select>
+        <ProfileSwitcher label="Viewing records for" />
         <div className="grid grid-cols-2 gap-3">
-          <Link to="/upload" className="flex items-center justify-center gap-2 btn btn-primary btn-md rounded-xl shadow-sm active:scale-95 transition-all">
+          <Link
+            to="/upload"
+            className="flex items-center justify-center gap-2 btn btn-primary btn-md rounded-xl shadow-sm active:scale-95 transition-all"
+          >
             <Upload className="w-4 h-4" />
             Upload Record
           </Link>
@@ -171,15 +168,37 @@ export default function Records() {
         </div>
       </div>
 
-      {/* LIMS Info Banner */}
+      {/* LIMS Bill Banner */}
       {limsBillCount > 0 && (
         <div className="rounded-2xl border border-primary-200 bg-primary-50/60 p-3 flex items-center gap-3">
           <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-sm border border-primary-100 shrink-0">
             <Building2 className="w-4 h-4 text-primary-700" />
           </div>
           <p className="text-xs font-medium text-slate-700">
-            <span className="font-bold text-primary-700">{limsBillCount} bills</span> linked from your connected lab.
+            <span className="font-bold text-primary-700">{limsBillCount} bill{limsBillCount > 1 ? 's' : ''}</span> linked from your connected lab.
           </p>
+        </div>
+      )}
+
+      {/* Search Bar */}
+      {allRecords.length > 0 && (
+        <div className="relative">
+          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by test name, lab or ID..."
+            className="w-full pl-10 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X size={16} />
+            </button>
+          )}
         </div>
       )}
 
@@ -187,18 +206,34 @@ export default function Records() {
       <section className="space-y-3">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-lg font-bold text-slate-900 tracking-tight">Health Records</h3>
-          <span className="text-xs font-semibold text-slate-400">{records.length} total</span>
+          <span className="text-xs font-semibold text-slate-400">
+            {searchQuery ? `${records.length} of ${allRecords.length}` : `${allRecords.length} total`}
+          </span>
         </div>
 
-        {records.length === 0 ? (
-          <div className="rounded-3xl border-2 border-dashed border-slate-100 bg-slate-50/30 p-12 text-center">
-            <FileText className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-            <p className="text-sm font-semibold text-slate-400">No health records found</p>
-            <p className="text-xs text-slate-400 mt-1">Upload a document or connect your lab.</p>
+        {recordsQuery.isLoading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="w-8 h-8 text-primary-700 animate-spin" />
           </div>
+        ) : records.length === 0 ? (
+          <EmptyState
+            icon={<FileText size={24} />}
+            title={searchQuery ? 'No matching records' : 'No health records found'}
+            subtitle={searchQuery ? 'Try a different search term.' : 'Upload a document or connect your lab.'}
+            action={
+              searchQuery ? (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="text-xs font-semibold text-primary-700 hover:text-primary-800"
+                >
+                  Clear search
+                </button>
+              ) : undefined
+            }
+          />
         ) : (
           <div className="space-y-3">
-            {/* LIMS Records with PDF actions */}
+            {/* LIMS Records */}
             {limsRecords.map((item: any) => {
               const isOpening = openingReportId === item.order_id;
               const badge = SOURCE_BADGE['lims'];
@@ -207,34 +242,37 @@ export default function Records() {
                   key={item.order_id}
                   className="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden hover:border-primary-200 hover:shadow-medium transition-all group"
                 >
-                  <Link
-                    to={`/records/view/${item.order_id}`}
-                    className="flex items-center gap-3 p-4 active:scale-[0.98] transition-transform"
-                  >
-                    <div className="w-11 h-11 bg-primary-50 rounded-2xl flex items-center justify-center text-primary-700 shrink-0 group-hover:bg-primary-100 transition-colors">
-                      <FileText size={19} strokeWidth={2} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <p className="font-semibold text-slate-900 text-sm truncate">
-                          {(item.test_names || []).join(', ') || item.display_id || 'Lab Report'}
-                        </p>
-                        <span className={`shrink-0 px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${badge.className}`}>
-                          {badge.label}
-                        </span>
+                  <div className="flex items-center justify-between p-4 gap-2 border-b border-slate-50">
+                    <Link
+                      to={`/records/view/${item.order_id}`}
+                      className="flex items-center gap-3 flex-1 min-w-0 active:scale-[0.98] transition-transform"
+                    >
+                      <div className="w-11 h-11 bg-primary-50 rounded-2xl flex items-center justify-center text-primary-700 shrink-0 group-hover:bg-primary-100 transition-colors">
+                        <FileText size={19} strokeWidth={2} />
                       </div>
-                      <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
-                        <Clock size={10} />
-                        {new Date(item.date).toLocaleDateString('en-IN')}
-                        <span className="w-1 h-1 rounded-full bg-slate-300" />
-                        <span className={`font-semibold ${item.status?.toLowerCase() === 'active' ? 'text-emerald-600' : 'text-slate-500'}`}>
-                          {(item.status || 'ACTIVE').toUpperCase()}
-                        </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <p className="font-semibold text-slate-900 text-sm truncate">
+                            {(item.test_names || []).join(', ') || 'Clinical Observation'}
+                          </p>
+                          <span className={`shrink-0 px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${badge.className}`}>
+                            {badge.label}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
+                          <Clock size={10} />
+                          {new Date(item.date).toLocaleDateString('en-IN')}
+                          <span className="w-1 h-1 rounded-full bg-slate-300" />
+                          <span className={`font-semibold ${item.status?.toLowerCase() === 'active' ? 'text-emerald-600' : 'text-slate-500'}`}>
+                            {(item.status || 'ACTIVE').toUpperCase()}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    <ChevronRight size={15} className="text-slate-300 group-hover:text-primary-500 transition-colors shrink-0" />
-                  </Link>
-                  {/* PDF Download Buttons - Only show if report is completed/final */}
+                      <ChevronRight size={15} className="text-slate-300 group-hover:text-primary-500 transition-colors shrink-0" />
+                    </Link>
+
+                  </div>
+                  {/* PDF Buttons */}
                   {['completed', 'finished', 'final', 'approved'].includes(item.status?.toLowerCase()) ? (
                     <div className="flex gap-2 px-4 pb-3">
                       <button
@@ -265,7 +303,9 @@ export default function Records() {
                   ) : (
                     <div className="px-4 pb-3">
                       <div className="bg-slate-50 rounded-xl py-2 px-3 border border-slate-100">
-                        <p className="text-[10px] font-medium text-slate-400 italic">Report will be available once finalized by the lab.</p>
+                        <p className="text-[10px] font-medium text-slate-400 italic">
+                          Report will be available once finalized by the lab.
+                        </p>
                       </div>
                     </div>
                   )}
@@ -310,6 +350,7 @@ export default function Records() {
         )}
       </section>
 
+      {/* Sync Footer */}
       <div className="pt-2 flex items-center justify-center gap-2">
         <div className="w-1.5 h-1.5 bg-success-500 rounded-full animate-pulse" />
         <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">

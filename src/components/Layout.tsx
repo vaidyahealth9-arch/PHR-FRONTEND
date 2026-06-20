@@ -76,11 +76,11 @@ export default function Layout() {
   });
 
   const navItems = [
-    { to: '/', icon: LayoutDashboard, label: 'Hub' },
-    { to: '/records', icon: FileText, label: 'Reports' },
+    { to: '/', icon: LayoutDashboard, label: 'Home' },
+    { to: '/records', icon: FileText, label: 'Records' },
     { to: '/smart-track', icon: Activity, label: 'Track' },
-    { to: '/billing', icon: CreditCard, label: 'Bills' },
-    { to: '/profile', icon: User, label: 'Bio' },
+    { to: '/billing', icon: CreditCard, label: 'Billing' },
+    { to: '/profile', icon: User, label: 'Profile' },
   ];
 
   useEffect(() => {

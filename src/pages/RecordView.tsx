@@ -1,17 +1,22 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
-  ArrowLeft, 
   Download, 
   Loader2, 
   AlertCircle, 
   CheckCircle, 
   AlertTriangle, 
   XCircle, 
-  ShieldCheck
+  ShieldCheck,
+  Trash2,
+  X
 } from 'lucide-react';
 import { recordsApi, limsApi } from '../api/client';
 import { useActiveProfile } from '../context/ProfileContext';
+import { useDeleteRecord } from '../hooks/useApi';
+import BackButton from '../components/BackButton';
+import { motion, AnimatePresence } from 'framer-motion';
+
 
 interface Analyte {
   name: string;
@@ -44,11 +49,24 @@ interface RecordDetails {
 
 export default function RecordView() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [record, setRecord] = useState<RecordDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const deleteMutation = useDeleteRecord();
+
+  const handleDelete = async () => {
+    if (!id) return;
+    try {
+      await deleteMutation.mutateAsync(id);
+      navigate('/records');
+    } catch {
+      alert('Failed to delete report. Please try again.');
+    }
+  };
 
   const toggleRow = (idx: number) => {
     setExpandedRows((prev) => ({
@@ -69,7 +87,7 @@ export default function RecordView() {
         const response = await recordsApi.getDetails(parseInt(id));
         setRecord(response.data);
       } catch (err: any) {
-        setError(err.response?.data?.detail || 'Identity Mismatch');
+        setError(err.response?.data?.detail || 'Unable to load report');
       } finally {
         setLoading(false);
       }
@@ -185,11 +203,8 @@ export default function RecordView() {
     <div className="w-full px-4 sm:px-6 py-8 pb-32 space-y-10 font-inter">
       {/* 🚀 Unified Report Header */}
       <header className="space-y-6">
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          <Link to="/records" className="w-full sm:w-auto h-12 px-4 bg-white rounded-2xl border border-slate-200 flex items-center justify-center gap-2 shadow-sm hover:border-primary-200 hover:text-primary-700 transition-all active:scale-95 text-xs font-bold text-slate-600 uppercase tracking-wider">
-            <ArrowLeft size={18} strokeWidth={2.5} />
-            Back
-          </Link>
+        <div className="flex items-center gap-3">
+          <BackButton to="/records" />
 
           {order_details.metadata?.source === 'lims' ? (
             <div className="flex gap-2 w-full sm:w-auto">
@@ -219,14 +234,23 @@ export default function RecordView() {
               )}
             </div>
           ) : (
-            <button 
-              onClick={handleDownloadOriginal} 
-              disabled={downloading} 
-              className="w-full sm:w-auto bg-primary-700 text-white px-6 py-3 rounded-2xl flex justify-center items-center gap-3 text-sm font-semibold shadow-lg shadow-primary-100 active:scale-95 hover:bg-primary-800 transition-all disabled:opacity-50"
-            >
-              {downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} strokeWidth={2} />}
-              Download Report
-            </button>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <button 
+                onClick={handleDownloadOriginal} 
+                disabled={downloading} 
+                className="flex-1 sm:flex-initial bg-slate-50 border border-slate-200 text-slate-700 px-4 py-3 rounded-2xl flex justify-center items-center gap-2 text-xs font-semibold shadow-sm active:scale-[0.98] hover:bg-slate-100 transition-all disabled:opacity-50"
+              >
+                {downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                Download Report
+              </button>
+              <button 
+                onClick={() => setShowDeleteConfirm(true)}
+                className="flex-1 sm:flex-initial bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-2xl flex justify-center items-center gap-2 text-xs font-semibold shadow-sm active:scale-[0.98] hover:bg-rose-100 transition-all"
+              >
+                <Trash2 size={16} />
+                Delete
+              </button>
+            </div>
           )}
         </div>
 
@@ -329,6 +353,75 @@ export default function RecordView() {
         <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Secure PHR Report</p>
         <p className="text-[10px] text-slate-400 font-medium leading-relaxed px-4 opacity-80">This clinical record is cryptographically verified and visible only to your session.</p>
       </footer>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-sm rounded-[2.5rem] bg-white shadow-premium relative overflow-hidden"
+            >
+              <div className="p-6 bg-gradient-to-br from-rose-700 to-rose-600 text-white relative">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-2xl -mr-12 -mt-12" />
+                <div className="relative flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white">
+                      <AlertCircle size={22} strokeWidth={2.5} />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-black uppercase tracking-tight">Confirm Delete</h4>
+                      <p className="text-rose-100 text-[10px] font-semibold mt-0.5">This action cannot be undone</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-white/70 active:scale-90 transition-all"
+                  >
+                    <X size={18} strokeWidth={3} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-5">
+                <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4 text-rose-700 space-y-2">
+                  <p className="text-xs font-bold uppercase tracking-wider text-rose-800">Warning:</p>
+                  <p className="text-xs font-medium leading-relaxed">
+                    You are deleting the uploaded health record <span className="font-bold text-rose-950">{order_details.test_names.join(', ') || order_details.display_id || 'this document'}</span>. 
+                    This will remove all parameters and historical data from your health charts.
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="flex-1 py-3.5 bg-slate-50 hover:bg-slate-100 text-slate-700 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl border border-slate-100 transition-all active:scale-95"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setShowDeleteConfirm(false);
+                      await handleDelete();
+                    }}
+                    disabled={deleteMutation.isPending}
+                    className="flex-1 py-3.5 bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-soft transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {deleteMutation.isPending ? (
+                      <Loader2 size={13} className="animate-spin" />
+                    ) : (
+                      <Trash2 size={14} />
+                    )}
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

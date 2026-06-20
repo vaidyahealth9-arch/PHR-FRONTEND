@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { authApi } from '../api/client';
-import { Phone, ArrowRight, CheckCircle, AlertCircle, Lock } from 'lucide-react';
+import { Phone, ArrowRight, CheckCircle, AlertCircle, Lock, RefreshCw } from 'lucide-react';
+
+const OTP_RESEND_COOLDOWN_SECONDS = 30;
 
 export default function Login() {
   const navigate = useNavigate();
@@ -14,7 +16,9 @@ export default function Login() {
   const [error, setError] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
   const autoOtpSentRef = useRef(false);
+  const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const signupState = location.state as
     | {
@@ -27,6 +31,27 @@ export default function Login() {
   const extractErrorMessage = (err: any, fallback: string) => {
     return err?.response?.data?.error?.message || err?.response?.data?.detail || fallback;
   };
+
+  const startResendCooldown = () => {
+    setResendCooldown(OTP_RESEND_COOLDOWN_SECONDS);
+    if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
+    cooldownTimerRef.current = setInterval(() => {
+      setResendCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(cooldownTimerRef.current!);
+          cooldownTimerRef.current = null;
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!signupState?.phoneNumber) {
@@ -47,6 +72,7 @@ export default function Login() {
       setLoading(true);
       try {
         await authApi.sendOtp(signupState.phoneNumber as string);
+        startResendCooldown();
       } catch (err: any) {
         setError(extractErrorMessage(err, 'Failed to send OTP. Please request a new one.'));
       } finally {
@@ -65,8 +91,24 @@ export default function Login() {
     try {
       await authApi.sendOtp(phoneNumber);
       setStep('otp');
+      startResendCooldown();
     } catch (err: any) {
-      setError(extractErrorMessage(err, 'Failed to send OTP. User may not exist.'));
+      setError(extractErrorMessage(err, 'Phone number not found. Please sign up first.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || loading) return;
+    setError('');
+    setOtp('');
+    setLoading(true);
+    try {
+      await authApi.sendOtp(phoneNumber);
+      startResendCooldown();
+    } catch (err: any) {
+      setError(extractErrorMessage(err, 'Failed to resend OTP. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -82,7 +124,7 @@ export default function Login() {
       login(response.data.access_token, response.data.refresh_token);
       navigate('/');
     } catch (err: any) {
-      setError(extractErrorMessage(err, 'Invalid OTP. Please try again.'));
+      setError(extractErrorMessage(err, 'Invalid OTP. Please check and try again.'));
     } finally {
       setLoading(false);
     }
@@ -102,28 +144,25 @@ export default function Login() {
       </div>
 
       <div className="auth-shell min-w-0">
-        <div className="auth-brand-sticky sticky top-3 z-20 glass-panel rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-center">
-          <div className="flex items-center gap-2 min-w-0">
-            <img src="/logo.png" alt="Vaidya" className="w-14 h-14 sm:w-16 sm:h-16 object-contain drop-shadow-[0_3px_8px_rgba(15,23,42,0.18)]" />
-            <div className="flex flex-col min-w-0">
-              <span className="text-base font-lexend font-black text-slate-900 tracking-tight leading-none truncate">VAIDYA</span>
-              <span className="text-[9px] font-medium text-slate-500 leading-none mt-1 truncate">Personal Health Record</span>
-            </div>
+        <div className="auth-brand-sticky sticky top-3 z-20 glass-panel rounded-3xl p-4 flex flex-col items-center justify-center">
+          <img src="/logo.png" alt="Vaidya" className="w-14 h-14 object-contain drop-shadow-[0_3px_8px_rgba(15,23,42,0.18)]" />
+          <div className="flex flex-col items-center mt-1.5 text-center">
+            <span className="text-base font-lexend font-black text-slate-900 tracking-tight leading-none">VAIDYA</span>
+            <span className="text-[10px] font-bold text-slate-500 leading-none mt-1">Personal Health Record</span>
           </div>
         </div>
 
         <div className="auth-card">
           <div className="bg-gradient-to-r from-primary-800 to-primary-700 text-white px-4 sm:px-5 pt-4 sm:pt-5 pb-5 sm:pb-6">
             <div>
-                <p className="text-xs font-semibold opacity-90">{isOtpRoute ? 'OTP Verification' : 'Vaidya Secure Login'}</p>
-                <h1 className="text-xl sm:text-2xl font-black leading-tight mt-1">{isOtpRoute ? 'Verify your number' : 'Welcome'}</h1>
-                <p className="text-xs text-primary-100 mt-1">{isOtpRoute ? 'Confirm your account to continue' : 'Fast OTP-based sign in'}</p>
+              <p className="text-xs font-semibold opacity-90">{isOtpRoute ? 'OTP Verification' : 'Secure Login'}</p>
+              <h1 className="text-xl sm:text-2xl font-black leading-tight mt-1">
+                {step === 'phone' ? 'Welcome back' : 'Enter your OTP'}
+              </h1>
+              <p className="text-xs text-primary-100 mt-1">
+                {step === 'phone' ? 'Sign in with your registered phone number' : `Code sent to ${phoneNumber}`}
+              </p>
             </div>
-            <p className="mt-3 text-sm text-primary-50 leading-6 break-words">
-              {step === 'phone'
-                ? 'Sign in quickly using your phone number.'
-                : 'Enter the OTP to continue to your reports.'}
-            </p>
             <div className="mt-4 flex items-center gap-2">
               <div className={`h-1.5 flex-1 rounded-full ${step === 'phone' ? 'bg-white' : 'bg-white/35'}`} />
               <div className={`h-1.5 flex-1 rounded-full ${step === 'otp' ? 'bg-white' : 'bg-white/35'}`} />
@@ -155,7 +194,7 @@ export default function Login() {
                       required
                     />
                   </div>
-                  <p className="text-xs text-slate-500 leading-5">Example: 98765 43210</p>
+                  <p className="text-xs text-slate-500 leading-5">Enter your 10-digit mobile number</p>
                 </div>
 
                 <button
@@ -176,7 +215,7 @@ export default function Login() {
                 </button>
 
                 <p className="text-center text-sm text-slate-600">
-                  Don’t have an account?{' '}
+                  Don't have an account?{' '}
                   <Link to="/signup" className="font-semibold text-primary-700 hover:text-primary-800">
                     Sign up
                   </Link>
@@ -197,7 +236,18 @@ export default function Login() {
                     maxLength={6}
                     required
                   />
-                  <p className="text-xs text-slate-500 leading-5">Code sent to {phoneNumber}</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-slate-500 leading-5">6-digit code sent to {phoneNumber}</p>
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={resendCooldown > 0 || loading}
+                      className="text-xs font-semibold text-primary-700 hover:text-primary-800 disabled:text-slate-400 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend OTP'}
+                    </button>
+                  </div>
                 </div>
 
                 <button
@@ -240,7 +290,7 @@ export default function Login() {
 
             <div className="flex items-center justify-center gap-2 text-xs text-slate-500 pt-2 border-t border-slate-200">
               <Lock className="w-3.5 h-3.5" />
-              <span>Data is encrypted and private</span>
+              <span>Your data is encrypted and private</span>
             </div>
           </div>
         </div>

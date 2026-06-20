@@ -22,32 +22,36 @@ const AnalytePdfCard = ({ analyte }: { analyte: AnalyteHistoryData }) => {
   const TrendIcon = analyte.trend === 'up' ? TrendingUp : analyte.trend === 'down' ? TrendingDown : Minus;
 
   return (
-    <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm flex flex-col h-[400px]">
+    <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm flex flex-col h-[460px]">
       {/* Card Header */}
-      <div className="bg-slate-50 px-5 py-3 border-b border-slate-100 flex justify-between items-start gap-3">
-        <h4 className="font-bold text-slate-800 text-sm line-clamp-2 leading-tight">{analyte.name}</h4>
-        <span className={`text-[9px] font-black px-2 py-0.5 rounded whitespace-nowrap ${statusBg} ${statusColor} border border-current opacity-80 mt-0.5`}>
+      <div className="bg-slate-50 px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <h4 className="font-bold text-slate-800 text-sm leading-relaxed truncate" title={analyte.name}>
+            {analyte.name}
+          </h4>
+        </div>
+        <span className={`text-[9px] font-black px-2 py-0.5 rounded whitespace-nowrap ${statusBg} ${statusColor} border border-current opacity-80`}>
           {statusLabel}
         </span>
       </div>
 
-      <div className="p-5 flex-1 flex flex-col space-y-4">
+      <div className="p-5 flex-1 flex flex-col justify-between">
         {/* Results Comparison */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Current Result</p>
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Current Result</p>
             <div className="flex items-baseline gap-1">
               <span className="text-2xl font-bold text-slate-900">{parseFloat(analyte.current_value).toFixed(2)}</span>
-              <span className="text-[10px] font-bold text-slate-400">{analyte.unit}</span>
+              <span className="text-[10px] font-bold text-slate-400 leading-relaxed">{analyte.unit}</span>
             </div>
           </div>
           <div className="space-y-1 border-l border-slate-100 pl-4">
-            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Previous Result</p>
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Previous Result</p>
             <div className="flex items-baseline gap-1">
               <span className="text-xl font-bold text-slate-500">
                 {analyte.previous_value ? parseFloat(analyte.previous_value).toFixed(2) : '—'}
               </span>
-              <span className="text-[10px] font-bold text-slate-300">{analyte.unit}</span>
+              <span className="text-[10px] font-bold text-slate-300 leading-relaxed">{analyte.unit}</span>
             </div>
           </div>
         </div>
@@ -56,24 +60,24 @@ const AnalytePdfCard = ({ analyte }: { analyte: AnalyteHistoryData }) => {
         <div className="flex items-center justify-between bg-slate-50/50 rounded-xl px-4 py-2 border border-slate-100">
           <div className="flex items-center gap-2">
             <TrendingUp size={12} className="text-primary-500" />
-            <span className="text-[10px] font-medium text-slate-500 truncate max-w-[150px]">
+            <span className="text-[10px] font-medium text-slate-500 truncate max-w-[150px] leading-relaxed">
               Ref: {analyte.reference_range || 'N/A'} {analyte.unit}
             </span>
           </div>
           <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
             <TrendIcon size={12} />
-            <span className="uppercase tracking-tighter">{analyte.trend}</span>
+            <span className="uppercase tracking-tighter leading-relaxed">{analyte.trend}</span>
           </div>
         </div>
 
         {/* Chart Area - Fixed Height */}
-        <div className="h-32 bg-white rounded-lg border border-slate-50 p-1">
-          <TrendChart data={analyte.history} unit={analyte.unit} />
+        <div className="h-32 bg-white rounded-lg border border-slate-50 p-1 overflow-hidden">
+          <TrendChart data={analyte.history} unit={analyte.unit} animate={false} className="w-full h-full" />
         </div>
 
         {/* Clinical Note */}
         <div className="bg-primary-50/30 p-2.5 rounded-xl border border-primary-100/30">
-          <p className="text-[9px] leading-tight text-primary-900 font-medium line-clamp-2">
+          <p className="text-[9px] leading-relaxed text-primary-900 font-medium">
             {analyte.name} {analyte.status_color === 'GREEN' ? 'is within the normal range.' : 'shows values outside the standard reference range.'} Tracked via connected lab source.
           </p>
         </div>

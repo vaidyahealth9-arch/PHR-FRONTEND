@@ -163,6 +163,7 @@ export const authApi = {
     state?: string | null;
     postal_code?: string | null;
     country?: string | null;
+    blood_group?: string | null;
   }) => apiClient.put('/api/v1/auth/me', data),
 };
 

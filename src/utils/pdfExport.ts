@@ -8,8 +8,8 @@ export const exportTrendsToPdf = async (elementId: string, patientName: string) 
   // Temporarily make the element visible for capture but keep it off-screen
   const originalStyle = container.style.cssText;
   const originalClasses = container.className;
-  container.style.position = 'absolute';
-  container.style.left = '0';
+  container.style.position = 'fixed';
+  container.style.left = '-9999px';
   container.style.top = '0';
   container.style.zIndex = '-9999';
   container.style.visibility = 'visible';
@@ -28,9 +28,12 @@ export const exportTrendsToPdf = async (elementId: string, patientName: string) 
     const canvas = await html2canvas(container, {
       scale: 2, // Better quality
       useCORS: true,
-      logging: true, // Turn on logging internally to debug any missing assets
+      logging: false,
       backgroundColor: '#ffffff',
       windowWidth: 1000,
+      windowHeight: container.scrollHeight,
+      scrollX: 0,
+      scrollY: 0,
       onclone: (clonedDoc) => {
         // Manually inject missing styles from the main document to the cloned document
         styleTags.forEach(styleNode => {

@@ -31,6 +31,13 @@ vi.mock('../api/client', () => ({
   },
 }));
 
+vi.mock('../context/ProfileContext', () => ({
+  useActiveProfile: () => ({
+    activeProfileId: '1',
+    profiles: [{ id: '1', full_name: 'Ranju Owner' }],
+  }),
+}));
+
 describe('UploadRecord Part 5 flow', () => {
   beforeEach(() => {
     mockUpload.mockResolvedValue({
@@ -71,10 +78,10 @@ describe('UploadRecord Part 5 flow', () => {
     await waitFor(() => {
       expect(mockUpload).toHaveBeenCalled();
       expect(mockExtract).toHaveBeenCalledWith('99');
-      expect(screen.getByText('Extracted Biomarkers')).toBeInTheDocument();
+      expect(screen.getByText('Extracted Data Preview')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm & Save for Analytics' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm & Save' }));
 
     await waitFor(() => {
       expect(mockConfirm).toHaveBeenCalledWith(

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Activity, Beaker, Loader2, ArrowLeftRight, FileDown } from 'lucide-react';
 import { useAnalyteHistory, useProfiles } from '../hooks/useApi';
 import { useActiveProfile } from '../context/ProfileContext';
@@ -6,6 +6,9 @@ import AnalyteHistoryCard, { AnalyteHistoryData } from '../components/AnalyteHis
 import { motion } from 'framer-motion';
 import { exportTrendsToPdf } from '../utils/pdfExport';
 import TrendReportPdf from '../components/TrendReportPdf';
+import PageHeader from '../components/PageHeader';
+import ProfileSwitcher from '../components/ProfileSwitcher';
+import EmptyState from '../components/EmptyState';
 
 interface TestGroup {
   test_name: string;
@@ -14,21 +17,45 @@ interface TestGroup {
 
 export default function SmartTrack() {
   const { profiles, activeProfileId } = useActiveProfile();
-  const validActiveProfileId = activeProfileId && profiles.some((p) => p.id === activeProfileId) ? activeProfileId : '';
+  const validActiveProfileId =
+    activeProfileId && profiles.some((p) => p.id === activeProfileId) ? activeProfileId : '';
 
-  const { data: historyData, isLoading } = useAnalyteHistory(validActiveProfileId || undefined, !!validActiveProfileId);
+  const { data: historyData, isLoading } = useAnalyteHistory(
+    validActiveProfileId || undefined,
+    !!validActiveProfileId
+  );
   const { data: profilesList } = useProfiles();
   const [exporting, setExporting] = useState(false);
 
-  const tests: TestGroup[] = historyData?.tests || [];
+  const tests: TestGroup[] = useMemo(() => {
+    if (!historyData?.tests) return [];
+    return historyData.tests.map((group: any) => {
+      const filteredAnalytes = group.analytes.map((analyte: any) => {
+        const filteredHistory = analyte.history || [];
+        const currentPoint = filteredHistory[0] || null;
+        const previousPoint = filteredHistory[1] || null;
+
+        return {
+          ...analyte,
+          current_value: currentPoint ? currentPoint.value : '0',
+          previous_value: previousPoint ? previousPoint.value : null,
+          history: filteredHistory,
+        };
+      }).filter((analyte: any) => analyte.history.length > 0);
+
+      return {
+        ...group,
+        analytes: filteredAnalytes,
+      };
+    }).filter((group: any) => group.analytes.length > 0);
+  }, [historyData]);
   const activeProfile = profilesList?.find((p: any) => p.is_primary) || profilesList?.[0];
   const patientName = activeProfile?.full_name || 'Patient';
 
   const handleExportPdf = async () => {
     setExporting(true);
     try {
-      // Small delay to ensure the off-screen component is ready
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise((r) => setTimeout(r, 100));
       await exportTrendsToPdf('trend-report-pdf-content', patientName);
     } catch (err) {
       console.error('PDF Export failed:', err);
@@ -52,59 +79,48 @@ export default function SmartTrack() {
     );
   }
 
+  const headerStats = tests.length > 0
+    ? [
+        { label: 'Biomarkers', value: String(totalAnalytes) },
+        { label: outOfRange > 0 ? 'Alerts' : 'All Normal', value: String(outOfRange) },
+      ]
+    : undefined;
+
   return (
-    <div className="w-full px-4 sm:px-6 py-5 pb-24 space-y-5 print:pb-4 print:space-y-4">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-primary-700 via-primary-600 to-success-600 rounded-[2rem] p-5 text-white shadow-premium relative overflow-hidden print:rounded-xl print:shadow-none print:bg-primary-700">
-        <div className="absolute right-0 top-0 w-36 h-36 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 print:hidden" />
-        <div className="relative">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-primary-100 print:hidden">Smart Track</p>
-          <h1 className="text-2xl font-bold tracking-tight mt-0.5">Health Trends</h1>
-          <p className="text-xs text-primary-50 mt-1.5 leading-relaxed font-medium">
-            Biomarker history sourced continuously from your connected lab.
-          </p>
-        </div>
+    <div className="py-4 pb-24 space-y-4 sm:space-y-5 print:pb-4 print:space-y-4">
+      {/* Unified Header */}
+      <PageHeader
+        icon={<Activity size={22} strokeWidth={2} />}
+        title="Health Trends"
+        subtitle="Biomarker history from your connected lab"
+        stats={headerStats}
+        action={
+          tests.length > 0 ? (
+            <button
+              onClick={handleExportPdf}
+              disabled={exporting}
+              className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20 shadow-soft active:scale-95 transition-all disabled:opacity-60 print:hidden"
+              title="Export all trends as PDF"
+            >
+              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+            </button>
+          ) : undefined
+        }
+      />
+
+      {/* Profile Switcher */}
+      <div className="glass-panel rounded-2xl p-4 print:hidden">
+        <ProfileSwitcher label="Tracking biomarkers for" />
       </div>
 
-      {/* Stats + Export Bar */}
-      {tests.length > 0 && (
-        <div className="flex items-center gap-3 print:hidden">
-          <div className="flex-1 grid grid-cols-2 gap-2">
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-soft px-4 py-3 text-center">
-              <p className="text-xl font-bold text-slate-900">{totalAnalytes}</p>
-              <p className="text-[11px] font-medium text-slate-400 mt-0.5">Biomarkers</p>
-            </div>
-            <div className={`rounded-2xl border shadow-soft px-4 py-3 text-center ${outOfRange > 0 ? 'bg-rose-50 border-rose-200' : 'bg-emerald-50 border-emerald-200'}`}>
-              <p className={`text-xl font-bold ${outOfRange > 0 ? 'text-rose-700' : 'text-emerald-700'}`}>{outOfRange}</p>
-              <p className={`text-[11px] font-medium mt-0.5 ${outOfRange > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
-                {outOfRange > 0 ? 'Alerts' : 'All Normal'}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={handleExportPdf}
-            disabled={exporting}
-            className="flex flex-col items-center justify-center gap-1 bg-primary-700 hover:bg-primary-800 text-white rounded-2xl px-4 py-3 shadow-soft border border-primary-600 active:scale-95 transition-all disabled:opacity-60 min-w-[68px]"
-            title="Export all trends as PDF"
-          >
-            {exporting ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <FileDown className="w-5 h-5" />
-            )}
-            <span className="text-[10px] font-bold uppercase tracking-wider">PDF</span>
-          </button>
-        </div>
-      )}
-
       {/* Test Groups */}
-      <div className="space-y-6 print:space-y-4">
+      <div className="space-y-5 print:space-y-4">
         {tests.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/60 p-10 text-center">
-            <Activity className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-            <p className="text-sm font-semibold text-slate-500">No LIMS linked tracking data found.</p>
-            <p className="text-xs text-slate-400 mt-1">Connect your lab account to start tracking.</p>
-          </div>
+          <EmptyState
+            icon={<Activity size={24} />}
+            title="No tracking data available"
+            subtitle="Connect your lab account or upload LIMS-linked records to start tracking biomarkers."
+          />
         ) : (
           tests.map((testGroup, groupIdx) => (
             <motion.div
@@ -128,15 +144,16 @@ export default function SmartTrack() {
         )}
       </div>
 
-      {/* Tip */}
+      {/* Usage Tip */}
       {tests.length > 0 && (
         <div className="bg-primary-50/60 border border-primary-100 rounded-2xl p-3.5 print:hidden">
           <p className="text-[11px] font-medium text-primary-800 flex items-center gap-2 leading-relaxed">
             <ArrowLeftRight className="w-3.5 h-3.5 shrink-0" />
-            Tap any row to see the clinical summary and historical trend graph. Use the PDF button to export all trends.
+            Tap any row to see clinical summary and historical trend graph. Use the export button to download a PDF.
           </p>
         </div>
       )}
+
       {/* Off-screen PDF content */}
       <TrendReportPdf tests={tests} patientName={patientName} />
     </div>

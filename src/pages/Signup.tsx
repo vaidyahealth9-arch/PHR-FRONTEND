@@ -120,13 +120,11 @@ export function Signup() {
       </div>
 
       <div className="auth-shell min-w-0">
-        <div className="auth-brand-sticky sticky top-3 z-20 glass-panel rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-center">
-          <div className="flex items-center gap-2 min-w-0">
-            <img src="/logo.png" alt="Vaidya" className="w-14 h-14 sm:w-16 sm:h-16 object-contain drop-shadow-[0_3px_8px_rgba(15,23,42,0.18)]" />
-            <div className="flex flex-col min-w-0">
-              <span className="text-base font-lexend font-black text-slate-900 tracking-tight leading-none truncate">VAIDYA</span>
-              <span className="text-[9px] font-medium text-slate-500 leading-none mt-1 truncate">Personal Health Record</span>
-            </div>
+        <div className="auth-brand-sticky sticky top-3 z-20 glass-panel rounded-3xl p-4 flex flex-col items-center justify-center">
+          <img src="/logo.png" alt="Vaidya" className="w-14 h-14 object-contain drop-shadow-[0_3px_8px_rgba(15,23,42,0.18)]" />
+          <div className="flex flex-col items-center mt-1.5 text-center">
+            <span className="text-base font-lexend font-black text-slate-900 tracking-tight leading-none">VAIDYA</span>
+            <span className="text-[10px] font-bold text-slate-500 leading-none mt-1">Personal Health Record</span>
           </div>
         </div>
 

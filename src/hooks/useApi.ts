@@ -194,3 +194,15 @@ export function useAnalyteHistory(profileId?: string, enabled: boolean = true) {
     enabled: enabled && typeof profileId !== 'undefined',
   });
 }
+
+export function useDeleteRecord() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => recordsApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['records'] });
+    },
+  });
+}
+

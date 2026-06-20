@@ -162,6 +162,146 @@ body.dark .card-clinical {
   @apply bg-slate-900 border-slate-800;
 }
 
+/* 🌙 Dark Mode automatic overrides for hardcoded Tailwind classes */
+html.dark .bg-gradient-to-b.from-slate-100.to-slate-50,
+body.dark .bg-gradient-to-b.from-slate-100.to-slate-50 {
+  background-image: radial-gradient(circle at top right, rgba(20, 126, 163, 0.12), transparent 45%),
+                    radial-gradient(circle at bottom left, rgba(39, 167, 197, 0.08), transparent 42%) !important;
+  background-color: rgb(2 6 23) !important; /* bg-slate-950 */
+}
+html.dark .bg-white,
+body.dark .bg-white {
+  background-color: rgba(15, 23, 42, 0.75) !important; /* bg-slate-900 with transparency */
+  backdrop-filter: blur(16px);
+}
+html.dark .bg-slate-50,
+body.dark .bg-slate-50 {
+  background-color: rgba(2, 6, 23, 0.6) !important; /* bg-slate-950 */
+}
+html.dark .bg-slate-100,
+body.dark .bg-slate-100 {
+  background-color: rgba(30, 41, 59, 0.6) !important; /* bg-slate-800 */
+}
+html.dark .bg-slate-50\/30,
+body.dark .bg-slate-50\/30 {
+  background-color: rgba(2, 6, 23, 0.25) !important;
+}
+html.dark .text-slate-900,
+body.dark .text-slate-900 {
+  color: rgb(248 250 252) !important; /* text-slate-50 */
+}
+html.dark .text-slate-800,
+body.dark .text-slate-800 {
+  color: rgb(241 245 249) !important; /* text-slate-100 */
+}
+html.dark .text-slate-700,
+body.dark .text-slate-700 {
+  color: rgb(226 232 240) !important; /* text-slate-200 */
+}
+html.dark .text-slate-600,
+body.dark .text-slate-600 {
+  color: rgb(203 213 225) !important; /* text-slate-300 */
+}
+html.dark .text-slate-500,
+body.dark .text-slate-500 {
+  color: rgb(148 163 184) !important; /* text-slate-400 */
+}
+html.dark .text-slate-400,
+body.dark .text-slate-400 {
+  color: rgb(148 163 184) !important; /* text-slate-400 */
+}
+html.dark .border-slate-100,
+body.dark .border-slate-100 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+html.dark .border-slate-50,
+body.dark .border-slate-50 {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+html.dark .border-slate-200,
+body.dark .border-slate-200 {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+html.dark .divide-slate-50 > :not([hidden]) ~ :not([hidden]),
+body.dark .divide-slate-50 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+html.dark .hover\:bg-slate-50:hover,
+body.dark .hover\:bg-slate-50:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+html.dark .hover\:bg-slate-100:hover,
+body.dark .hover\:bg-slate-100:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+html.dark .hover\:bg-slate-50\/50:hover,
+body.dark .hover\:bg-slate-50\/50:hover {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Form fields in dark mode */
+html.dark select,
+body.dark select,
+html.dark input,
+body.dark input {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  color: rgb(241 245 249) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+html.dark option,
+body.dark option {
+  background-color: rgb(15 23 42) !important;
+  color: rgb(241 245 249) !important;
+}
+
+/* Status overlays / Banners */
+html.dark .bg-primary-50,
+body.dark .bg-primary-50 {
+  background-color: rgba(15, 103, 134, 0.25) !important;
+}
+html.dark .bg-primary-50\/60,
+body.dark .bg-primary-50\/60 {
+  background-color: rgba(15, 103, 134, 0.15) !important;
+}
+html.dark .bg-emerald-50,
+body.dark .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+}
+html.dark .bg-rose-50,
+body.dark .bg-rose-50 {
+  background-color: rgba(244, 63, 94, 0.15) !important;
+}
+html.dark .bg-amber-50,
+body.dark .bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+}
+html.dark .bg-orange-50,
+body.dark .bg-orange-50 {
+  background-color: rgba(249, 115, 22, 0.15) !important;
+}
+
+html.dark .text-emerald-600,
+html.dark .text-emerald-700 {
+  color: rgb(52, 211, 153) !important;
+}
+html.dark .text-rose-600,
+html.dark .text-rose-700 {
+  color: rgb(251, 113, 133) !important;
+}
+html.dark .text-amber-600,
+html.dark .text-amber-700 {
+  color: rgb(251, 191, 36) !important;
+}
+html.dark .text-orange-600,
+html.dark .text-orange-700 {
+  color: rgb(253, 186, 116) !important;
+}
+html.dark .text-primary-800,
+html.dark .text-primary-700 {
+  color: rgb(161, 221, 241) !important;
+}
+
+
 @media (max-height: 760px) {
   .auth-brand-sticky {
     position: relative !important;
