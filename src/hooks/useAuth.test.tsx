@@ -35,7 +35,7 @@ describe('useAuth', () => {
     });
 
     act(() => {
-      result.current.login('access-1', 'refresh-1');
+      result.current.login('access-1', 'refresh-1', 30);
     });
 
     expect(localStorage.getItem('access_token')).toBe('access-1');

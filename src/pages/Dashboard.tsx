@@ -147,13 +147,6 @@ export default function Dashboard() {
       iconColor: 'text-slate-600',
     },
     {
-      title: 'Upload',
-      icon: Activity,
-      route: '/upload',
-      description: 'Add a new record',
-      iconColor: 'text-success-700',
-    },
-    {
       title: 'Smart Track',
       icon: Activity,
       route: '/smart-track',
