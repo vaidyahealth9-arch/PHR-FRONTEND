@@ -18,7 +18,7 @@
   }
 
   * {
-    -webkit-tap-highlight-color: rgba(20, 126, 163, 0.2);
+    -webkit-tap-highlight-color: rgba(20, 126, 163, 0.15);
   }
 
   ::selection {
@@ -27,12 +27,16 @@
   }
 
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
+    @apply antialiased;
     font-family: var(--font-primary);
+    background-color: #f0f4f8;
     background-image:
-      radial-gradient(circle at top right, rgba(20, 126, 163, 0.08), transparent 45%),
-      radial-gradient(circle at bottom left, rgba(39, 167, 197, 0.06), transparent 42%);
+      radial-gradient(ellipse at 10% 0%, rgba(15, 103, 134, 0.12) 0%, transparent 55%),
+      radial-gradient(ellipse at 90% 100%, rgba(28, 111, 135, 0.09) 0%, transparent 50%),
+      linear-gradient(160deg, #eef6fa 0%, #f3f7fb 40%, #edf4f9 100%);
+    color: #0f2a38;
     min-height: 100dvh;
+    font-size: 14px;
   }
 
   html,
@@ -42,49 +46,78 @@
     scroll-behavior: smooth;
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
+  h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
     @apply tracking-tight;
   }
 }
 
 @layer components {
+
+  /* ── Buttons ── */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 min-h-12 px-4 py-3 text-sm sm:text-base active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl font-semibold transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-1 min-h-[2.5rem] px-4 py-2 text-sm active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none;
     touch-action: manipulation;
+    letter-spacing: -0.01em;
   }
 
   .btn-primary {
-    @apply bg-primary-700 text-white shadow-sm hover:bg-primary-800 focus:ring-primary-600;
+    @apply bg-primary-700 text-white shadow-[0_2px_8px_rgba(15,103,134,0.35)] hover:bg-primary-800 focus:ring-primary-500;
   }
 
   .btn-secondary {
-    @apply bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 focus:ring-slate-300;
+    @apply bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 hover:border-slate-300 focus:ring-slate-300;
   }
 
   .btn-md {
-    @apply min-h-12;
+    @apply min-h-[2.5rem];
   }
 
+  /* ── Inputs ── */
   .input {
-    @apply w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 shadow-sm transition-all duration-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-500 focus:outline-none;
+    /* 16px prevents iOS auto-zoom */
+    font-size: 16px;
+    @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-slate-900 placeholder:text-slate-400 shadow-sm transition-all duration-150 focus:border-primary-400 focus:ring-2 focus:ring-primary-400/25 focus:outline-none;
+  }
+
+  /* ── Cards ── */
+  .card {
+    @apply bg-white rounded-2xl border border-slate-100 shadow-[0_1px_4px_rgba(15,23,42,0.06),0_4px_12px_rgba(15,23,42,0.04)] overflow-hidden;
+  }
+
+  .card-interactive {
+    @apply card hover:border-primary-200 hover:shadow-[0_4px_16px_rgba(15,103,134,0.12)] active:scale-[0.975] transition-all duration-150;
   }
 
   .card-clinical {
-    @apply bg-white rounded-[1.5rem] border border-slate-100 shadow-sm overflow-hidden transition-all duration-300;
+    @apply card;
   }
 
   .card-clinical-interactive {
-    @apply card-clinical hover:border-primary-200 active:scale-[0.98];
+    @apply card-interactive;
+  }
+
+  /* ── Section labels ── */
+  .section-label {
+    @apply text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.12em] mb-2 px-0.5;
+  }
+
+  /* ── List Rows ── */
+  .list-row {
+    @apply flex items-center gap-3 bg-white rounded-2xl border border-slate-100 shadow-sm p-3 transition-all duration-150 w-full text-left;
+  }
+
+  a.list-row,
+  button.list-row {
+    @apply hover:border-primary-100 hover:shadow-md active:scale-[0.985] cursor-pointer;
+  }
+
+  .list-row-icon {
+    @apply flex items-center justify-center w-8 h-8 rounded-xl bg-primary-50 text-primary-700 shrink-0;
   }
 
   .text-h1 {
-    @apply text-2xl font-bold text-slate-900 leading-none;
+    @apply text-lg sm:text-xl font-extrabold text-slate-900 leading-snug;
   }
 
   .text-label-caps {
@@ -116,15 +149,15 @@
   }
 
   .screen-container {
-    @apply w-full max-w-lg sm:max-w-xl mx-auto px-4 sm:px-6;
+    @apply w-full max-w-lg sm:max-w-xl mx-auto px-3 sm:px-5;
   }
 
   .auth-shell {
-    @apply relative w-full max-w-sm sm:max-w-md mx-auto space-y-3 sm:space-y-4;
+    @apply relative w-full max-w-[22rem] sm:max-w-md mx-auto space-y-2.5 sm:space-y-4;
   }
 
   .auth-card {
-    @apply rounded-[1.5rem] sm:rounded-[1.75rem] border border-white/70 bg-white shadow-premium overflow-hidden;
+    @apply rounded-2xl sm:rounded-[1.75rem] border border-white/70 bg-white shadow-premium overflow-hidden;
   }
 
   .hover-lift {
@@ -155,6 +188,12 @@ body.dark {
 html.dark .glass-panel,
 body.dark .glass-panel {
   @apply bg-slate-900/85 border-slate-800;
+}
+
+html.dark .card,
+body.dark .card {
+  background-color: rgba(15, 23, 42, 0.75) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 html.dark .card-clinical,

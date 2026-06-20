@@ -137,7 +137,7 @@ export default function Records() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="py-4 pb-24 space-y-4 sm:space-y-5"
+      className="py-3 pb-20 space-y-3"
     >
       {/* Unified Header */}
       <PageHeader
@@ -148,21 +148,21 @@ export default function Records() {
       />
 
       {/* Profile + Actions */}
-      <div className="glass-panel rounded-2xl p-4 space-y-3">
+      <div className="glass-panel rounded-2xl p-3 space-y-2.5">
         <ProfileSwitcher label="Viewing records for" />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2">
           <Link
             to="/upload"
-            className="flex items-center justify-center gap-2 btn btn-primary btn-md rounded-xl shadow-sm active:scale-95 transition-all"
+            className="flex items-center justify-center gap-1.5 btn btn-primary btn-md rounded-xl shadow-sm"
           >
-            <Upload className="w-4 h-4" />
-            Upload Record
+            <Upload className="w-3.5 h-3.5" />
+            Upload
           </Link>
           <button
             onClick={() => recordsQuery.refetch()}
-            className="flex items-center justify-center gap-2 btn btn-secondary btn-md rounded-xl shadow-sm active:scale-95 transition-all"
+            className="flex items-center justify-center gap-1.5 btn btn-secondary btn-md rounded-xl shadow-sm"
           >
-            <RefreshCw className={`w-4 h-4 ${recordsQuery.isFetching ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${recordsQuery.isFetching ? 'animate-spin' : ''}`} />
             Refresh
           </button>
         </div>
@@ -170,11 +170,11 @@ export default function Records() {
 
       {/* LIMS Bill Banner */}
       {limsBillCount > 0 && (
-        <div className="rounded-2xl border border-primary-200 bg-primary-50/60 p-3 flex items-center gap-3">
-          <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-sm border border-primary-100 shrink-0">
-            <Building2 className="w-4 h-4 text-primary-700" />
+        <div className="rounded-xl border border-primary-200 bg-primary-50/60 p-2.5 flex items-center gap-2.5">
+          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm border border-primary-100 shrink-0">
+            <Building2 className="w-3.5 h-3.5 text-primary-700" />
           </div>
-          <p className="text-xs font-medium text-slate-700">
+          <p className="text-[11px] font-medium text-slate-700 leading-tight">
             <span className="font-bold text-primary-700">{limsBillCount} bill{limsBillCount > 1 ? 's' : ''}</span> linked from your connected lab.
           </p>
         </div>
@@ -183,30 +183,30 @@ export default function Records() {
       {/* Search Bar */}
       {allRecords.length > 0 && (
         <div className="relative">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by test name, lab or ID..."
-            className="w-full pl-10 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+            className="w-full pl-9 pr-9 input rounded-xl"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
             >
-              <X size={16} />
+              <X size={14} />
             </button>
           )}
         </div>
       )}
 
       {/* Records List */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between px-1">
-          <h3 className="text-lg font-bold text-slate-900 tracking-tight">Health Records</h3>
-          <span className="text-xs font-semibold text-slate-400">
+      <section className="space-y-2">
+        <div className="flex items-center justify-between px-0.5">
+          <p className="section-label mb-0">{searchQuery ? 'Search Results' : 'Health Records'}</p>
+          <span className="text-[10px] font-semibold text-slate-400">
             {searchQuery ? `${records.length} of ${allRecords.length}` : `${allRecords.length} total`}
           </span>
         </div>
@@ -240,71 +240,70 @@ export default function Records() {
               return (
                 <div
                   key={item.order_id}
-                  className="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden hover:border-primary-200 hover:shadow-medium transition-all group"
+                  className="card overflow-hidden hover:border-primary-200 hover:shadow-[0_4px_16px_rgba(15,103,134,0.12)] transition-all group"
                 >
-                  <div className="flex items-center justify-between p-4 gap-2 border-b border-slate-50">
+                  <div className="flex items-center justify-between p-3 gap-2 border-b border-slate-50">
                     <Link
                       to={`/records/view/${item.order_id}`}
-                      className="flex items-center gap-3 flex-1 min-w-0 active:scale-[0.98] transition-transform"
+                      className="flex items-center gap-2.5 flex-1 min-w-0 active:scale-[0.98] transition-transform"
                     >
-                      <div className="w-11 h-11 bg-primary-50 rounded-2xl flex items-center justify-center text-primary-700 shrink-0 group-hover:bg-primary-100 transition-colors">
-                        <FileText size={19} strokeWidth={2} />
+                      <div className="w-9 h-9 bg-primary-50 rounded-lg flex items-center justify-center text-primary-700 shrink-0 group-hover:bg-primary-100 transition-colors">
+                        <FileText size={16} strokeWidth={2} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <p className="font-semibold text-slate-900 text-sm truncate">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <p className="font-semibold text-slate-900 text-sm truncate leading-tight">
                             {(item.test_names || []).join(', ') || 'Clinical Observation'}
                           </p>
-                          <span className={`shrink-0 px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${badge.className}`}>
+                          <span className={`shrink-0 px-1 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${badge.className}`}>
                             {badge.label}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
-                          <Clock size={10} />
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-medium">
+                          <Clock size={9} />
                           {new Date(item.date).toLocaleDateString('en-IN')}
-                          <span className="w-1 h-1 rounded-full bg-slate-300" />
+                          <span className="w-0.5 h-0.5 rounded-full bg-slate-300" />
                           <span className={`font-semibold ${item.status?.toLowerCase() === 'active' ? 'text-emerald-600' : 'text-slate-500'}`}>
                             {(item.status || 'ACTIVE').toUpperCase()}
                           </span>
                         </div>
                       </div>
-                      <ChevronRight size={15} className="text-slate-300 group-hover:text-primary-500 transition-colors shrink-0" />
+                      <ChevronRight size={13} className="text-slate-300 group-hover:text-primary-500 transition-colors shrink-0" />
                     </Link>
-
                   </div>
                   {/* PDF Buttons */}
                   {['completed', 'finished', 'final', 'approved'].includes(item.status?.toLowerCase()) ? (
-                    <div className="flex gap-2 px-4 pb-3">
+                    <div className="flex gap-1.5 px-3 pb-2.5 pt-1">
                       <button
                         onClick={() => openSignedReport(item.order_id, 'regular')}
                         disabled={isOpening}
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl py-2 text-[11px] font-semibold transition-all disabled:opacity-60 active:scale-95"
+                        className="flex-1 flex items-center justify-center gap-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg py-1.5 text-[10px] font-semibold transition-all disabled:opacity-60 active:scale-95"
                       >
                         {isOpening && openingType === 'regular' ? (
-                          <Loader2 size={13} className="animate-spin" />
+                          <Loader2 size={11} className="animate-spin" />
                         ) : (
-                          <Download size={13} />
+                          <Download size={11} />
                         )}
                         Regular PDF
                       </button>
                       <button
                         onClick={() => openSignedReport(item.order_id, 'smart')}
                         disabled={isOpening}
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-primary-700 hover:bg-primary-800 text-white rounded-xl py-2 text-[11px] font-semibold transition-all disabled:opacity-60 active:scale-95"
+                        className="flex-1 flex items-center justify-center gap-1 bg-primary-700 hover:bg-primary-800 text-white rounded-lg py-1.5 text-[10px] font-semibold transition-all disabled:opacity-60 active:scale-95"
                       >
                         {isOpening && openingType === 'smart' ? (
-                          <Loader2 size={13} className="animate-spin" />
+                          <Loader2 size={11} className="animate-spin" />
                         ) : (
-                          <ShieldCheck size={13} />
+                          <ShieldCheck size={11} />
                         )}
                         Smart PDF
                       </button>
                     </div>
                   ) : (
-                    <div className="px-4 pb-3">
-                      <div className="bg-slate-50 rounded-xl py-2 px-3 border border-slate-100">
-                        <p className="text-[10px] font-medium text-slate-400 italic">
-                          Report will be available once finalized by the lab.
+                    <div className="px-3 pb-2.5 pt-1">
+                      <div className="bg-slate-50 rounded-lg py-1.5 px-2.5 border border-slate-100">
+                        <p className="text-[9px] font-medium text-slate-400 italic">
+                          Report available once finalized by the lab.
                         </p>
                       </div>
                     </div>
@@ -321,28 +320,28 @@ export default function Records() {
                 <Link
                   key={item.order_id}
                   to={`/records/view/${item.order_id}`}
-                  className="bg-white rounded-2xl shadow-soft border border-slate-100 p-4 flex items-center gap-3 hover:border-primary-200 hover:shadow-medium active:scale-[0.98] transition-all group"
+                  className="card-interactive flex items-center gap-2.5 p-3"
                 >
-                  <div className="w-11 h-11 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 shrink-0 group-hover:bg-primary-50 group-hover:text-primary-700 transition-colors">
-                    <FileText size={19} strokeWidth={2} />
+                  <div className="w-9 h-9 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 shrink-0 group-hover:bg-primary-50 group-hover:text-primary-700 transition-colors">
+                    <FileText size={16} strokeWidth={2} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <p className="font-semibold text-slate-900 text-sm truncate">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <p className="font-semibold text-slate-900 text-sm truncate leading-tight">
                         {(item.test_names || []).join(', ') || item.display_id || 'Health Document'}
                       </p>
-                      <span className={`shrink-0 px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${badge.className}`}>
+                      <span className={`shrink-0 px-1 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${badge.className}`}>
                         {badge.label}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
-                      <Clock size={10} />
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-medium">
+                      <Clock size={9} />
                       {new Date(item.date).toLocaleDateString('en-IN')}
-                      <span className="w-1 h-1 rounded-full bg-slate-300" />
+                      <span className="w-0.5 h-0.5 rounded-full bg-slate-300" />
                       <span>{(item.status || 'ACTIVE').toUpperCase()}</span>
                     </div>
                   </div>
-                  <ChevronRight size={15} className="text-slate-300 group-hover:text-primary-500 transition-colors shrink-0" />
+                  <ChevronRight size={13} className="text-slate-300 group-hover:text-primary-500 transition-colors shrink-0" />
                 </Link>
               );
             })}

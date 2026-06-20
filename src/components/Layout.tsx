@@ -22,18 +22,18 @@ const NavItem = ({ to, icon: Icon, label, isActive }: { to: string, icon: any, l
   return (
     <Link 
       to={to} 
-      className={`flex flex-col items-center justify-center flex-1 min-w-0 py-1.5 sm:py-2 transition-all relative rounded-2xl ${
+      className={`flex flex-col items-center justify-center flex-1 min-w-0 py-1 sm:py-1.5 transition-all relative rounded-xl ${
         isActive ? 'text-primary-800 bg-primary-50 shadow-sm' : 'text-slate-500 hover:text-primary-700'
       }`}
     >
-      <Icon size={18} strokeWidth={isActive ? 2.8 : 2.2} className="transition-transform duration-300 sm:w-5 sm:h-5" />
-      <span className={`text-[10px] sm:text-[11px] font-semibold mt-1 transition-opacity duration-300 truncate max-w-full max-[360px]:hidden ${isActive ? 'opacity-100' : 'opacity-80'}`}>
+      <Icon size={16} strokeWidth={isActive ? 2.8 : 2.2} className="transition-transform duration-300 sm:w-[18px] sm:h-[18px]" />
+      <span className={`text-[9px] sm:text-[10px] font-semibold mt-0.5 transition-opacity duration-300 truncate max-w-full max-[360px]:hidden ${isActive ? 'opacity-100' : 'opacity-80'}`}>
         {label}
       </span>
       {isActive && (
         <motion.div 
           layoutId="nav-glow"
-          className="absolute top-1.5 right-4 w-1.5 h-1.5 bg-primary-700 rounded-full shadow-[0_0_8px_rgba(15,103,134,0.7)]"
+          className="absolute top-1 right-3 w-1 h-1 bg-primary-700 rounded-full shadow-[0_0_6px_rgba(15,103,134,0.7)]"
         />
       )}
     </Link>
@@ -130,47 +130,47 @@ export default function Layout() {
 
   return (
     <div className="flex flex-col min-h-dvh bg-gradient-to-b from-slate-100 to-slate-50 font-inter">
-      {/* 🏥 Unified Top Bar (Functional MVPs) */}
-      <nav className="fixed top-0 left-0 right-0 h-[4.5rem] sm:h-[4.75rem] glass-panel border-b border-slate-100 z-50 screen-container flex items-center justify-between pt-[env(safe-area-inset-top)] gap-2">
-        <Link to="/" className="flex items-center gap-2 min-w-0 active:scale-95 transition-all">
-          <img src="/logo.png" alt="Vaidya" className="w-10 h-10 object-contain" />
+      {/* 🏥 Unified Top Bar */}
+      <nav className="fixed top-0 left-0 right-0 h-14 sm:h-[4.25rem] glass-panel border-b border-slate-100 z-50 screen-container flex items-center justify-between pt-[env(safe-area-inset-top)] gap-2">
+        <Link to="/" className="flex items-center gap-1.5 min-w-0 active:scale-95 transition-all">
+          <img src="/logo.png" alt="Vaidya" className="w-8 h-8 sm:w-9 sm:h-9 object-contain" />
           <div className="flex flex-col min-w-0">
-            <span className="text-base sm:text-lg font-lexend font-black text-slate-900 tracking-tighter truncate">VAIDYA</span>
-            <span className="hidden min-[401px]:block text-[10px] font-medium text-slate-500 truncate">Personal Health Record</span>
+            <span className="text-sm sm:text-base font-lexend font-black text-slate-900 tracking-tighter truncate">VAIDYA</span>
+            <span className="hidden min-[401px]:block text-[9px] sm:text-[10px] font-medium text-slate-500 truncate">Personal Health Record</span>
           </div>
         </Link>
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           <button 
             onClick={() => navigate('/notifications')}
-            className={`relative w-10 h-10 flex items-center justify-center rounded-xl transition-all ${
+            className={`relative w-9 h-9 flex items-center justify-center rounded-xl transition-all ${
               location.pathname === '/notifications' ? 'bg-primary-100 text-primary-800 shadow-inner' : 'text-slate-500 hover:text-primary-700 hover:bg-primary-50'
             }`}
             title={settings.pushNotifications ? 'Notifications' : 'Notifications are off'}
           >
             {settings.pushNotifications ? (
-              <Bell size={20} strokeWidth={2.5} />
+              <Bell size={18} strokeWidth={2.5} />
             ) : (
-              <BellOff size={20} strokeWidth={2.5} />
+              <BellOff size={18} strokeWidth={2.5} />
             )}
             {unreadCount > 0 && location.pathname !== '/notifications' && (
-              <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 min-w-4 h-4 px-0.5 rounded-full bg-rose-600 text-white text-[9px] font-bold flex items-center justify-center">
                 {unreadCount}
               </span>
             )}
           </button>
           <button 
             onClick={() => navigate('/settings')}
-            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${
+            className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${
               location.pathname === '/settings' ? 'bg-primary-100 text-primary-800 shadow-inner' : 'text-slate-500 hover:text-primary-700 hover:bg-primary-50'
             }`}
           >
-            <Settings size={20} strokeWidth={2.5} />
+            <Settings size={18} strokeWidth={2.5} />
           </button>
         </div>
       </nav>
 
       {/* Main Viewport */}
-      <main className="flex-1 screen-container pt-[4.6rem] sm:pt-[4.85rem] pb-[6.1rem] sm:pb-[6.25rem] overflow-x-hidden">
+      <main className="flex-1 screen-container pt-[3.6rem] sm:pt-[4.35rem] pb-[4.5rem] sm:pb-[5.5rem] overflow-x-hidden">
         <motion.div
           key={location.pathname}
           initial={prefersReducedMotion ? false : { opacity: 0, y: 4 }}
@@ -183,8 +183,8 @@ export default function Layout() {
       </main>
 
       {/* 🛳️ Pixel-Symmetric Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 h-[4.8rem] sm:h-[5.5rem] glass-panel border-t border-slate-100 z-50 screen-container shadow-[0_-12px_34px_rgba(0,0,0,0.05)] pb-[env(safe-area-inset-bottom)]">
-        <div className="flex items-center h-full px-1 gap-1">
+      <nav className="fixed bottom-0 left-0 right-0 h-[4rem] sm:h-[4.75rem] glass-panel border-t border-slate-100 z-50 screen-container shadow-[0_-8px_24px_rgba(0,0,0,0.05)] pb-[env(safe-area-inset-bottom)]">
+        <div className="flex items-center h-full px-0.5 gap-0.5">
           {navItems.map((item) => (
             <NavItem 
               key={item.to} 

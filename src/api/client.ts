@@ -60,7 +60,8 @@ export const apiClient = axios.create({
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('access_token');
+    // Support tokens in either localStorage (Remember Me) or sessionStorage (session-only)
+    const token = localStorage.getItem('access_token') ?? sessionStorage.getItem('access_token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -82,7 +83,9 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refresh_token');
+        // Read refresh token from whichever storage holds it
+        const refreshToken =
+          localStorage.getItem('refresh_token') ?? sessionStorage.getItem('refresh_token');
         if (!refreshToken) {
           throw new Error('No refresh token available');
         }
@@ -92,9 +95,12 @@ apiClient.interceptors.response.use(
         });
 
         const { access_token, refresh_token: newRefreshToken } = response.data;
-        
-        localStorage.setItem('access_token', access_token);
-        localStorage.setItem('refresh_token', newRefreshToken);
+
+        // Write back to whichever storage the old token was in
+        const useLocalStorage = !!localStorage.getItem('refresh_token');
+        const store = useLocalStorage ? localStorage : sessionStorage;
+        store.setItem('access_token', access_token);
+        store.setItem('refresh_token', newRefreshToken);
 
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${access_token}`;
@@ -102,8 +108,11 @@ apiClient.interceptors.response.use(
 
         return apiClient(originalRequest);
       } catch (refreshError) {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+        // Clear both storages on failure
+        ['access_token', 'refresh_token', 'phr_token_expiry'].forEach((k) => {
+          localStorage.removeItem(k);
+          sessionStorage.removeItem(k);
+        });
         onAuthFailureRedirect();
         return Promise.reject(refreshError);
       }

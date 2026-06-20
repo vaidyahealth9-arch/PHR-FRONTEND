@@ -21,22 +21,22 @@ interface PageHeaderProps {
  */
 export default function PageHeader({ icon, title, subtitle, stats, action, children }: PageHeaderProps) {
   return (
-    <div className="bg-gradient-to-br from-primary-800 via-primary-700 to-success-700 rounded-[1.75rem] shadow-premium p-5 text-white relative overflow-hidden border border-white/10">
+    <div className="bg-gradient-to-br from-primary-800 via-primary-700 to-success-700 rounded-2xl sm:rounded-[1.75rem] shadow-premium p-4 sm:p-5 text-white relative overflow-hidden border border-white/10">
       {/* Decorative blob */}
-      <div className="absolute top-0 right-0 w-36 h-36 bg-white/10 rounded-full blur-3xl -mr-18 -mt-18 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-28 h-28 bg-white/10 rounded-full blur-3xl -mr-14 -mt-14 pointer-events-none" />
 
-      <div className="relative space-y-4">
+      <div className="relative space-y-3">
         {/* Title row */}
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30 shadow-soft flex-shrink-0 text-white">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30 shadow-soft flex-shrink-0 text-white">
             {icon}
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="text-[1.35rem] sm:text-[1.6rem] font-black tracking-tight truncate leading-tight">
+            <h1 className="text-lg sm:text-[1.4rem] font-black tracking-tight truncate leading-tight">
               {title}
             </h1>
             {subtitle && (
-              <p className="text-primary-100 text-xs font-medium mt-0.5 truncate">{subtitle}</p>
+              <p className="text-primary-100 text-[10px] sm:text-xs font-medium mt-0.5 truncate">{subtitle}</p>
             )}
           </div>
           {action && <div className="shrink-0">{action}</div>}
@@ -44,26 +44,26 @@ export default function PageHeader({ icon, title, subtitle, stats, action, child
 
         {/* Stats grid */}
         {stats && stats.length > 0 && (
-          <div className={`grid gap-2 sm:gap-3 grid-cols-${Math.min(stats.length, 3)}`}>
+          <div className={`grid gap-1.5 sm:gap-2.5 grid-cols-${Math.min(stats.length, 3)}`}>
             {stats.map((stat, i) => {
               const val = stat.value || '';
               const fontSizeClass = val.length > 10 
-                ? 'text-[10px] sm:text-xs' 
+                ? 'text-[9px] sm:text-[10px]' 
                 : val.length > 6 
-                  ? 'text-xs sm:text-sm' 
-                  : 'text-xl sm:text-2xl';
+                  ? 'text-[10px] sm:text-xs' 
+                  : 'text-lg sm:text-xl';
 
               return (
                 <div
                   key={i}
-                  className="bg-white/12 backdrop-blur-md rounded-2xl p-3 border border-white/20 text-center min-w-0 flex flex-col justify-between"
+                  className="bg-white/12 backdrop-blur-md rounded-xl sm:rounded-2xl p-2 sm:p-3 border border-white/20 text-center min-w-0 flex flex-col justify-between"
                 >
-                  <div className="h-8 flex items-end justify-center min-w-0 pb-0.5">
+                  <div className="h-6 sm:h-8 flex items-end justify-center min-w-0 pb-0.5">
                     <p className={`${fontSizeClass} font-black tracking-tight leading-none truncate w-full`} title={val}>
                       {val}
                     </p>
                   </div>
-                  <p className="text-[11px] font-medium text-primary-100 mt-1 opacity-90 truncate w-full">{stat.label}</p>
+                  <p className="text-[9px] sm:text-[11px] font-medium text-primary-100 mt-0.5 opacity-90 truncate w-full">{stat.label}</p>
                 </div>
               );
             })}

@@ -1,6 +1,24 @@
 import { useState, useEffect } from 'react';
 import { authApi } from '../api/client';
 
+const TOKEN_KEY = 'access_token';
+const REFRESH_KEY = 'refresh_token';
+const EXPIRY_KEY = 'phr_token_expiry';
+
+/** Read a token from localStorage or sessionStorage (localStorage takes priority). */
+function readToken(key: string): string | null {
+  return localStorage.getItem(key) ?? sessionStorage.getItem(key);
+}
+
+/** Clear all auth tokens from both storages. */
+function clearTokens() {
+  [localStorage, sessionStorage].forEach((store) => {
+    store.removeItem(TOKEN_KEY);
+    store.removeItem(REFRESH_KEY);
+    store.removeItem(EXPIRY_KEY);
+  });
+}
+
 export interface AuthUser {
   id: string;
   email?: string;
@@ -18,29 +36,52 @@ export function useAuth() {
   }, []);
 
   const checkAuth = () => {
-    const token = localStorage.getItem('access_token');
-    setIsAuthenticated(!!token);
+    const token = readToken(TOKEN_KEY);
+    if (!token) {
+      setIsAuthenticated(false);
+      setLoading(false);
+      return;
+    }
+
+    // Validate expiry if set (only present for "Remember me" sessions)
+    const expiry = localStorage.getItem(EXPIRY_KEY);
+    if (expiry) {
+      const expiryMs = Number(expiry);
+      if (Number.isFinite(expiryMs) && Date.now() > expiryMs) {
+        // Session expired — auto logout
+        clearTokens();
+        setIsAuthenticated(false);
+        setLoading(false);
+        return;
+      }
+    }
+
+    setIsAuthenticated(true);
     setLoading(false);
   };
 
-  const login = (accessToken: string, refreshToken: string) => {
-    console.log('useAuth.login called with tokens');
-    console.log('Access token:', accessToken?.substring(0, 20) + '...');
-    
-    // Save to localStorage FIRST
-    localStorage.setItem('access_token', accessToken);
+  /**
+   * Persist tokens after a successful login.
+   * @param accessToken  JWT access token
+   * @param refreshToken JWT refresh token
+   * @param rememberDays 30 | 90 for "Remember me", undefined for session-only
+   */
+  const login = (accessToken: string, refreshToken: string, rememberDays?: number) => {
+    const storage = rememberDays ? localStorage : sessionStorage;
+
+    clearTokens(); // clean the other storage first
+
+    storage.setItem(TOKEN_KEY, accessToken);
     if (refreshToken) {
-      localStorage.setItem('refresh_token', refreshToken);
-    } else {
-      localStorage.removeItem('refresh_token');
+      storage.setItem(REFRESH_KEY, refreshToken);
     }
-    console.log('Tokens saved to localStorage');
-    
-    // Then update state - this should trigger immediately
+
+    if (rememberDays) {
+      const expiryMs = Date.now() + rememberDays * 24 * 60 * 60 * 1000;
+      localStorage.setItem(EXPIRY_KEY, String(expiryMs));
+    }
+
     setIsAuthenticated(true);
-    console.log('isAuthenticated set to true');
-    
-    // Force a re-check to ensure state is synced
     checkAuth();
   };
 
@@ -49,15 +90,14 @@ export function useAuth() {
   };
 
   const logout = async () => {
-    const refreshToken = localStorage.getItem('refresh_token') || undefined;
+    const refreshToken = readToken(REFRESH_KEY) || undefined;
     try {
       await authApi.logout(refreshToken);
     } catch {
       // best-effort logout
     }
 
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    clearTokens();
     setIsAuthenticated(false);
     setUser(null);
   };
