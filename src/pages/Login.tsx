@@ -290,7 +290,7 @@ export default function Login() {
                     </div>
                     <div className="flex items-center gap-1.5">
                       <ShieldCheck className="w-3.5 h-3.5 text-primary-600" />
-                      <span className="text-xs font-semibold text-slate-700">Remember me for 3 months</span>
+                      <span className="text-xs font-semibold text-slate-700">Remember me</span>
                     </div>
                   </label>
                 </div>
